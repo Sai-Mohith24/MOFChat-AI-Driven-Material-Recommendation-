@@ -36,3 +36,30 @@ Ensure the Llama 3 model is downloaded and running locally in a separate termina
 ollama run llama3
 ```
 ### 5. Initialize the Databases
+*Note: You must have the `coremof.xlsx` dataset placed in the designated `tables` directory before running this step.*
+Build the SQLite database from the Excel dataset:
+```bash
+python setup_db.py
+```
+Build the FAISS semantic vector store containing MOF domain rules:
+```bash
+python setup_vectorstore.py
+```
+## 💻 Usage
+Launch the Streamlit web interface:
+```bash
+streamlit run app.py
+```
+Navigate to `http://localhost:8501` in your browser. 
+**Example Queries to try:**
+- *"Find me 3 MOFs with a surface area greater than 4000 and a void fraction greater than 0.8"*
+- *"What is the single MOF with the absolute highest Accessible Surface Area in the database? Give me its ID and tell me what high surface area is typically used for."*
+- *"I need a MOF for gas separation. Can you find 3 MOFs that have a Void Fraction greater than 0.7 AND a Density lower than 0.5?"*
+## 📁 Repository Structure
+- `app.py`: Streamlit frontend application.
+- `agent_core.py`: LangChain logic, SQL generation, and Hybrid RAG orchestration.
+- `setup_db.py`: ETL pipeline to parse `coremof.xlsx` into `hmof.db`.
+- `setup_vectorstore.py`: Script to generate the FAISS semantic index.
+- `requirements.txt`: Python package dependencies.
+## 📄 License
+This project is for academic and research purposes. Please adhere to the usage licenses of the underlying CoRE-MOF dataset and Meta's Llama 3 model.
