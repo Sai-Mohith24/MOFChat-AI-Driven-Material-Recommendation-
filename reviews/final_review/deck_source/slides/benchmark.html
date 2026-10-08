@@ -1,0 +1,16 @@
+<section id="benchmark" data-transition="fade" style="background:#F7F6F2;color:#14212B;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#1D6E8C;font-weight:600">Benchmark</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1">The safety layers matter most for the small offline model</h2>
+</div>
+<table style="font-size:28px;color:#14212B">
+<tr><th style="width:52%;text-align:left">Exact answers</th><th style="width:24%;text-align:right">Development (64)</th><th style="width:24%;text-align:right">Held-out (20)</th></tr>
+<tr><td>Review-1 two-tower</td><td style="text-align:right">9.4 %</td><td style="text-align:right">5 %</td></tr>
+<tr style="background:#EEF2F3"><td>Rules only (no LLM)</td><td style="text-align:right">100 %</td><td style="text-align:right">80 %</td></tr>
+<tr><td>Llama 3 8B local: alone → validator → hybrid</td><td style="text-align:right">86 → 94 → 100 %</td><td style="text-align:right">65 → 70 → 80 %</td></tr>
+<tr style="background:#EEF2F3"><td><b>Gemini 3.1 Flash-Lite: alone → validator → hybrid</b></td><td style="text-align:right"><b>100 → 100 → 100 %</b></td><td style="text-align:right"><b>100 → 100 → 100 %</b></td></tr>
+</table>
+<p style="font-size:28px;line-height:1.45;color:#3E4C57">Gold answers come from hand-written gold plans run through the same executor, which is unit-tested against pandas. The rule parser was tuned on the development set, so the held-out set is the honest estimate.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6B75">MOFChat · Team 09 · 8</p>
+<aside>Ten question types: single and multiple constraints, metals and open metal sites, superlatives, multi-objective, applications, counts and averages, lookups and similarity, impossible requests, and knowledge or off-topic questions. A system counts as correct only if it returns exactly the MOFs, count or average the gold plan returns. For a strong free model the validator and hybrid merge change nothing and cost under 0.01 seconds. For the local 8B model they add 15 points on new phrasings, which is why MOFChat still works offline. Twenty held-out questions is small: one question is 5 points. ChatMOF reports 96.9 percent on its own search questions with GPT-4; the question sets differ.</aside>
+</section>

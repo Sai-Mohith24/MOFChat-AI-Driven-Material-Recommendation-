@@ -124,6 +124,18 @@ def test_validator_contradiction_and_application_expansion():
     assert {(c.op, c.value) for c in p.constraints if c.column == "PLD"} == {(">=", 3.30), ("<=", 3.80)}
 
 
+def test_validator_drops_objectives_not_in_application_question():
+    # GPT-OSS 20B planned "Best MOFs for CO2 capture" with its own objectives, which replaced the preset
+    raw = {"intent": "search", "application": "co2_capture",
+           "objectives": [{"column": "Surface_Area", "direction": "max"}, {"column": "Void_Fraction", "direction": "max"}]}
+    p, _ = validator.validate_plan(raw, "Best MOFs for CO2 capture")
+    assert [(o.column, o.direction) for o in p.objectives] == [("ASA_vol", "max"), ("LCD", "min")]
+    p, _ = validator.validate_plan(raw, "CO2 capture MOFs with the highest surface areas")
+    assert [o.column for o in p.objectives] == ["Surface_Area"]       # the user asked for this one
+    p, _ = validator.validate_plan(dict(raw, source="rules"), "Best MOFs for CO2 capture")
+    assert len(p.objectives) == 2                                        # rule plans are not grounding-checked
+
+
 def test_answer_validator_catches_garbled_id_and_numbers():
     rows = db.get_rows(["ACOCOM", "ACOCUS", "ACODAZ"])
     allowed = validator.allowed_numbers(rows, None)
@@ -134,6 +146,33 @@ def test_answer_validator_catches_garbled_id_and_numbers():
     assert "ACOCLUS" not in v["text"]
     ok = validator.validate_answer("ACOCOM has a surface area of 4,394 m²/g and void fraction 0.86.", rows, allowed)
     assert ok["ok"]
+    # GPT-OSS writes thousands with a narrow no-break space ("4\u202f394"); that is one number, not "394"
+    assert validator.validate_answer("ACOCOM has a surface area of 4\u202f394 m²/g.", rows, allowed)["ok"]
+
+
+def test_answer_validator_catches_false_comparison_claims():
+    # GPT-OSS 20B wrote this for "Zinc MOFs with high surface area and low density": every number
+    # matches something in the results, but UHUPOD01 has 4,564 m²/g, not >= 6000.
+    rows = db.get_rows(["acscombsci.5b00188_5036495", "UHUPOD01", "RUTNOK"])
+    allowed = validator.allowed_numbers(rows, None)
+    bad = validator.validate_answer(
+        "The remaining three (acscombsci.5b00188_5036495, UHUPOD01, RUTNOK) still offer high surface areas "
+        "(≥ 6000 m²/g) with relatively low densities (≤ 0.34 g/cm³).", rows, allowed)
+    assert not bad["ok"] and len(bad["false_claims"]) == 1 and "UHUPOD01" in bad["false_claims"][0]
+    for text in ("All three have surface areas above 4,500 m²/g and densities below 0.35 g/cm³.",
+                 "No MOF has a surface area above 20,000 m²/g; the closest are UHUPOD01 and RUTNOK.",
+                 "MOFs with PLD below 3.31 Å have zero surface area, so these were excluded.",
+                 "RUTNOK has a void fraction above 80%."):
+        assert validator.validate_answer(text, rows, allowed)["false_claims"] == [], text
+    # restating the user's own (impossible) threshold next to the closest matches is not a claim
+    assert validator.validate_answer("The closest MOFs to surface area > 20000 m²/g are UHUPOD01 and RUTNOK.",
+                                     rows, allowed + [20000.0], skip_values=[20000.0])["ok"]
+    # Pareto-front claims are checked against the NSGA-II ranks
+    ranked = rows.assign(pareto_front=[1, 2, 2])
+    v = validator.validate_answer("acscombsci.5b00188_5036495 and UHUPOD01 are on the first Pareto front.", ranked, allowed)
+    assert v["false_claims"] == ['"first Pareto front" is false for UHUPOD01 (Pareto front 2)']
+    assert validator.validate_answer("They lie on Pareto front 1 (except the last two on front 2).",
+                                     ranked, allowed)["false_claims"] == []
 
 
 # -------------------------------------------------------------------- tools

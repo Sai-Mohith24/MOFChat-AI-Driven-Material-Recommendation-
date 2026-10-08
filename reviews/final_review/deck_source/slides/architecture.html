@@ -1,0 +1,52 @@
+<section id="architecture" data-transition="fade" style="background:#F7F6F2;color:#14212B;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#1D6E8C;font-weight:600">Architecture</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1">The LLM plans and explains; the database answers</h2>
+</div>
+<div style="display:flex;align-items:center;gap:0px">
+<div style="width:288px;background:#FFFFFF;border:2px solid #1D6E8C;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:600">Planner</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">LLM writes a JSON plan; rule parser adds certain facts</p>
+</div>
+<x-connector style="width:56px;color:#1D6E8C;border-width:3px"></x-connector>
+<div style="width:288px;background:#FFFFFF;border:2px solid #1D6E8C;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:600">Validator</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">columns, units, ranges, grounding; errors go back to the LLM</p>
+</div>
+<x-connector style="width:56px;color:#1D6E8C;border-width:3px"></x-connector>
+<div style="width:288px;background:#1D6E8C;border:2px solid #1D6E8C;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:600;color:#F7F6F2">Executor</h3>
+<p style="font-size:24px;line-height:1.35;color:#E3EEF2">one of four tools, below</p>
+</div>
+<x-connector style="width:56px;color:#1D6E8C;border-width:3px"></x-connector>
+<div style="width:288px;background:#FFFFFF;border:2px solid #1D6E8C;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:600">Answer writer</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">LLM explains at most 10 verified rows</p>
+</div>
+<x-connector style="width:56px;color:#1D6E8C;border-width:3px"></x-connector>
+<div style="width:288px;background:#FFFFFF;border:2px solid #C8641E;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:600">Answer validator</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">IDs, numbers and claims must match</p>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px">
+<div style="background:#EEF2F3;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:28px;font-weight:600">Search · count</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">parameterised read-only SQL, then NSGA-II ranking</p>
+</div>
+<div style="background:#EEF2F3;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:28px;font-weight:600">Similar</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">FT-Transformer embeddings + FAISS</p>
+</div>
+<div style="background:#EEF2F3;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:28px;font-weight:600">Predict</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">XGBoost, conformal interval, SHAP</p>
+</div>
+<div style="background:#EEF2F3;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:28px;font-weight:600">Knowledge</h3>
+<p style="font-size:24px;line-height:1.35;color:#3E4C57">RAG over curated notes and the ChatMOF paper</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6B75">MOFChat · Team 09 · 4</p>
+<aside>A question goes through five stages. The planner turns it into a structured JSON plan, never code. The validator checks the plan and sends errors back to the LLM for up to two corrections, then falls back to the rule parser. The executor runs one of four tools. The LLM then writes the answer from the verified rows only, and the answer validator rejects any MOF ID, number or comparison claim the results do not support. The app always shows the verified table next to the text.</aside>
+</section>

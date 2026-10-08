@@ -1,0 +1,21 @@
+<section id="planner" data-transition="fade" style="background:#EEF2F3;color:#14212B;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#1D6E8C;font-weight:600">Planning and validation</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1">A plan can be checked field by field; code cannot</h2>
+</div>
+<div style="display:flex;gap:56px">
+<div style="flex:1;background:#14212B;border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;color:#6FC3D9;font-weight:600">"Zinc MOFs with high surface area and low density"</p>
+<p style="font-family:'IBM Plex Mono', 'Courier New', monospace;font-size:26px;line-height:1.5;color:#EAF0F2">{"intent": "search",<br>&#160;"metals": ["Zn"],<br>&#160;"objectives": [<br>&#160;&#160;{"column": "Surface_Area", "direction": "max"},<br>&#160;&#160;{"column": "Density", "direction": "min"}],<br>&#160;"limit": 5}</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:0px">
+<p style="font-size:28px;line-height:1.35;padding:16px 0px;border-top:2px solid #1D6E8C">Columns from a whitelist, aliases resolved ("porosity" → void fraction)</p>
+<p style="font-size:28px;line-height:1.35;padding:16px 0px;border-top:1px solid #C9D3D8">Units, percentages, physically possible ranges</p>
+<p style="font-size:28px;line-height:1.35;padding:16px 0px;border-top:1px solid #C9D3D8">A threshold not in the question becomes a preference</p>
+<p style="font-size:28px;line-height:1.35;padding:16px 0px;border-top:1px solid #C9D3D8">MOF IDs must appear in the question</p>
+<p style="font-size:28px;line-height:1.35;padding:16px 0px;border-top:1px solid #C9D3D8;border-bottom:1px solid #C9D3D8">Errors go back to the LLM twice, then the rule parser plans</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6B75">MOFChat · Team 09 · 6</p>
+<aside>Instead of generating pandas code like ChatMOF, the LLM fills a small JSON schema. Each field can be validated, SQL is compiled from whitelisted column names with bound parameters on a read-only connection, so a wrong column or an injection is impossible. The hybrid planner adds to the LLM plan the facts a deterministic rule parser is certain about: explicit numbers, metals, limits and application keywords. If the question names an application such as CO2 capture, objectives the question does not mention are dropped so the preset decides the ranking.</aside>
+</section>

@@ -8,15 +8,16 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from .agent import AgentResponse, MOFChatAgent
+from .agent import AgentResponse, MOFChatAgent, _fmt
 from .config import COLUMN_BY_NAME, EVAL_DIR, unit_of
 from .db import load_materials
 from .optimizer import pareto_front_mask
+from .properties import Prediction
 
 
-@st.cache_resource(show_spinner="Loading MOFChat (models, indexes)…", max_entries=4)
-def get_agent(use_llm: bool, planner_mode: str) -> MOFChatAgent:
-    return MOFChatAgent(use_llm=use_llm, planner_mode=planner_mode)
+@st.cache_resource(show_spinner="Loading MOFChat (models, indexes)…", max_entries=8)
+def get_agent(use_llm: bool, planner_mode: str, model_id: str | None = None) -> MOFChatAgent:
+    return MOFChatAgent(use_llm=use_llm, planner_mode=planner_mode, model_id=model_id)
 
 
 @st.cache_data(show_spinner=False)
@@ -91,11 +92,63 @@ def shap_chart(shap_df: pd.DataFrame) -> alt.Chart:
         .properties(height=110, width=420))
 
 
+def render_prediction(p: Prediction, attention: bool = True) -> None:
+    """Prediction metrics, SHAP explanation and (optionally) FT-Transformer attention for one prediction."""
+    f = lambda v: _fmt(p.target, v)  # noqa: E731
+    with st.container(horizontal=True):
+        st.metric(f"Predicted {COLUMN_BY_NAME[p.target].label.lower()}", f"{f(p.value)} {p.unit}", border=True)
+        st.metric("90% prediction interval", f"{f(p.low)} – {f(p.high)} {p.unit}", border=True)
+        if p.ft_value is not None:
+            st.metric("FT-Transformer", f"{f(p.ft_value)} {p.unit}", border=True)
+        if p.actual is not None:
+            st.metric("Database value", f"{f(p.actual)} {p.unit}", f"error {f(p.value - p.actual)}",
+                      delta_color="off", border=True)
+    if p.hurdle_applied:
+        st.info(f"Pore limiting diameter {p.inputs['PLD']:.2f} Å is below the 3.31 Å probe diameter, so the "
+                "accessible surface area is exactly 0 (physics rule; holds for every MOF in the dataset).",
+                icon=":material/block:")
+    else:
+        c1, c2 = st.columns(2) if attention and p.ft_attention else (st.container(), None)
+        with c1:
+            st.markdown("**Why this value? (SHAP)**")
+            shap_df = pd.DataFrame({"feature": [label(k) for k in p.contributions],
+                                    "value": [f"{p.inputs[k]:.3g}" for k in p.contributions],
+                                    "shap": list(p.contributions.values())})
+            st.altair_chart(alt.Chart(shap_df).mark_bar().encode(
+                x=alt.X("shap:Q", title=f"Contribution ({p.unit})"),
+                y=alt.Y("feature:N", sort=alt.EncodingSortField("shap", op="max", order="descending"), title=None,
+                        axis=alt.Axis(labelLimit=320)),
+                color=alt.condition(alt.datum.shap > 0, alt.value("#4c78a8"), alt.value("#e45756")),
+                tooltip=["feature", "value", alt.Tooltip("shap:Q", format=".2f")]).properties(height=240))
+            st.caption(f"Average prediction (base value) {f(p.base_value)} {p.unit} + contributions = "
+                       f"{f(p.value)} {p.unit}.")
+        if c2 is not None:
+            with c2:
+                st.markdown("**FT-Transformer attention ([CLS] → descriptor, last layer)**")
+                att = pd.DataFrame({"feature": [label(k) for k in p.ft_attention],
+                                    "attention": list(p.ft_attention.values())})
+                st.altair_chart(alt.Chart(att).mark_bar(color="#72b7b2").encode(
+                    x=alt.X("attention:Q", title="attention weight"),
+                    y=alt.Y("feature:N", sort="-x", title=None, axis=alt.Axis(labelLimit=320))).properties(height=240))
+                st.caption("Attention shows where the model looks, not causal importance; SHAP is the "
+                           "explanation to rely on.")
+    if p.imputed:
+        st.caption("Filled with database medians: " + ", ".join(p.imputed))
+
+
 def render_response(r: AgentResponse, show_details: bool = True) -> None:
     st.markdown(r.answer)
+    if r.models_used:
+        from . import llm
+        names = [llm.BY_ID[m].label if m in llm.BY_ID else m for m in r.models_used]
+        st.caption(":material/smart_toy: Answered with " + ", ".join(names))
+    elif not r.llm_used:
+        st.caption(":material/rule: Rule-based planner and template answer (no language model)")
     res = r.result
     if r.table is not None and not r.table.empty:
         st.dataframe(r.table, hide_index=True, column_config=column_config(r.table))
+    for p in r.predictions[:1]:
+        render_prediction(p, attention=False)   # like the table, the model output is always shown verbatim
     if res is not None and res.candidates is not None and len(r.plan.objectives) >= 2:
         with st.expander("Pareto front (NSGA-II)", icon=":material/scatter_plot:"):
             st.altair_chart(pareto_chart(res.candidates, res.rows, r.plan.objectives))
@@ -127,8 +180,8 @@ def render_response(r: AgentResponse, show_details: bool = True) -> None:
                 v = r.validation
                 status = "passed" if v.get("ok") else "issues found"
                 st.markdown(f"**Answer validator:** {status} (attempts: {v.get('attempts', 1)})")
-                st.json({k: v[k] for k in ("invalid_ids", "corrected_ids", "unretrieved_ids", "unverified_numbers")},
-                        expanded=False)
+                st.json({k: v.get(k) for k in ("invalid_ids", "corrected_ids", "unretrieved_ids",
+                                               "unverified_numbers", "false_claims")}, expanded=False)
             st.markdown("**Trace**")
             st.code("\n".join(r.trace) or "-", language="text")
             st.caption(" · ".join(f"{k} {v:.2f}s" for k, v in r.timings.items()))

@@ -1,14 +1,13 @@
 # How to run MOFChat
 
-1. **Start Ollama** (optional, but needed for the Llama 3 planner and answer writer). Open the Ollama app, or run this in a separate terminal:
-   ```bash
-   ollama serve
-   ```
-   The model must be pulled once with `ollama pull llama3`. Without Ollama, the app still works with its rule-based planner.
+1. **Language models** (optional; the app works without any LLM using its rule-based planner).
+   - **Free cloud models:** put your keys in `.env`, copied from `.env.example`. The keys for Gemini, Groq and OpenRouter are already there.
+   - **Local models:** open the Ollama app, or run `ollama serve` in a separate terminal.
+   - **Check which models are ready:** `python -m mofchat.llm --list`.
 
 2. **Go to the project and activate the environment:**
    ```bash
-   cd /Users/saimohith/Documents/Sem-5/Data-Driven/Project-antigravity
+   cd /Users/saimohith/Documents/Sem-5/Data-Driven/Final-project
    source venv/bin/activate
    ```
 
@@ -28,4 +27,4 @@
    python -m pytest -q
    python evaluate.py
    ```
-   Use `python evaluate.py --no-llm` for a quick run without Ollama. The evaluation writes `artifacts/eval/` and `docs/RESULTS.md`.
+   The full evaluation compares six models and takes about 1.5–2 hours (free-tier rate limits). Use `python evaluate.py --no-llm` for a quick run without any LLM, or `--only answers|knowledge|models` to re-run one part. The evaluation writes `artifacts/eval/` and `docs/RESULTS.md`.

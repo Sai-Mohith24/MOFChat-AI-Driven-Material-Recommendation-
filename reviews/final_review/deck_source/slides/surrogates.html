@@ -1,0 +1,28 @@
+<section id="surrogates" data-transition="fade" style="background:#EEF2F3;color:#14212B;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#1D6E8C;font-weight:600">Surrogate models</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1">Predicting surface area with a calibrated interval and an explanation</h2>
+</div>
+<div style="display:flex;gap:64px">
+<table style="font-size:28px;color:#14212B;width:960px">
+<tr><th style="width:52%;text-align:left">Model (held-out test)</th><th style="width:24%;text-align:right">MAE m²/g</th><th style="width:24%;text-align:right">R²</th></tr>
+<tr><td>Mean baseline</td><td style="text-align:right">610</td><td style="text-align:right">0.343</td></tr>
+<tr style="background:#F7F6F2"><td>Ridge</td><td style="text-align:right">158</td><td style="text-align:right">0.947</td></tr>
+<tr><td>Gaussian process</td><td style="text-align:right">98</td><td style="text-align:right">0.977</td></tr>
+<tr style="background:#F7F6F2"><td>FT-Transformer</td><td style="text-align:right">93</td><td style="text-align:right">0.982</td></tr>
+<tr><td><b>XGBoost (used)</b></td><td style="text-align:right"><b>90</b></td><td style="text-align:right"><b>0.982</b></td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:32px;width:640px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;color:#1D6E8C">90.5 %</p>
+<p style="font-size:28px;line-height:1.35;color:#3E4C57">of test MOFs fall inside the 90 % split-conformal interval</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;color:#1D6E8C">100 %</p>
+<p style="font-size:28px;line-height:1.35;color:#3E4C57">accuracy of the physics rule: PLD below 3.31 Å means zero area</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6B75">MOFChat · Team 09 · 11</p>
+<aside>Features: density, LCD, PLD, LFPD, void fraction and pore volume; split 70/10/10/10 for training, early stopping, conformal calibration and test. XGBoost and the FT-Transformer are statistically tied, which matches Grinsztajn et al.: trees remain very strong on medium-sized tabular data. XGBoost trains about 400 times faster and gives exact TreeSHAP explanations, so it is the production model and the FT-Transformer is a second opinion. SHAP ranks pore volume and void fraction first, which is physically sensible. Void fraction is also predicted, with R squared 0.828.</aside>
+</section>

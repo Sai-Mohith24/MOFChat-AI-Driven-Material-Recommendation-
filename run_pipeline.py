@@ -2,7 +2,7 @@
 run_pipeline.py - build everything from the raw spreadsheet, in order.
 
   python run_pipeline.py            # ETL, knowledge index, embeddings, property models, tests
-  python run_pipeline.py --eval     # ... and the full evaluation (needs ~15 min with Ollama running)
+  python run_pipeline.py --eval     # ... and the full six-model evaluation (1.5-2 h, mostly free-tier waits)
 """
 
 import subprocess

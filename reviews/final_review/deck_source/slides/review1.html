@@ -1,0 +1,24 @@
+<section id="review1" data-transition="fade" style="background:#14212B;color:#EAF0F2;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#6FC3D9;font-weight:600">Since review 1</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1;color:#F7F6F2">We measured our first design, found why it failed, and replaced it</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:flex-start">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px">
+<p style="font-size:30px;line-height:1.45;color:#B9C8CF">Review 1 matched a Sentence-BERT question vector against FT-Transformer MOF vectors. Same dimension, but never trained together, so the search ignored the question.</p>
+<p style="font-size:30px;line-height:1.45;color:#B9C8CF">"Surface area &gt; 4000 and void fraction &gt; 0.8" returned 100 MOFs with at most 807 m²/g; 206 real matches exist. "Chocolate cake" returned the same 100.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px;width:680px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-weight:600;color:#F7F6F2">5 % <span style="color:#6FC3D9">→ 100 %</span></p>
+<p style="font-size:28px;color:#B9C8CF">exact answers on 20 held-out questions</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:80px;font-weight:600;color:#F7F6F2">9.4 % <span style="color:#6FC3D9">→ 100 %</span></p>
+<p style="font-size:28px;color:#B9C8CF">on the 64-question development set</p>
+</div>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#8FA3AD">MOFChat · Team 09 · 3</p>
+<aside>Say this openly: we tested our own review-1 system and it failed. A two-tower model needs contrastive training on question and MOF pairs; equal dimensions do not make two vector spaces comparable. Numeric constraints are facts, so we now evaluate them exactly in SQL and let the language model do what it is good at, understanding the question. The FT-Transformer stayed where it is valid: MOF-to-MOF similarity and property prediction. The benchmark that shows the failure is part of the project.</aside>
+</section>

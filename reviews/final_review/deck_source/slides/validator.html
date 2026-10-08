@@ -1,0 +1,31 @@
+<section id="validator" data-transition="fade" style="background:#14212B;color:#EAF0F2;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#6FC3D9;font-weight:600">Answer validation</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1;color:#F7F6F2">Every number can be real and the sentence still false</h2>
+</div>
+<div style="background:#1F3140;border-left:6px solid #E08A3C;border-radius:8px;padding:32px 40px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;color:#B9C8CF">GPT-OSS 20B, first draft for "Zinc MOFs with high surface area and low density"</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:38px;line-height:1.35;color:#F7F6F2">"The remaining three (acscombsci…5036495, UHUPOD01, RUTNOK) still offer high surface areas <span style="color:#F2A65A">(≥ 6000 m²/g)</span>"</p>
+<p style="font-size:28px;color:#F2A65A;font-weight:600">UHUPOD01 has 4,564 m²/g. The number check passed it.</p>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #6FC3D9;padding:16px 0px 0px 0px">
+<h3 style="font-size:28px;font-weight:600;color:#F7F6F2">IDs</h3>
+<p style="font-size:24px;line-height:1.4;color:#B9C8CF">must be in the results; ACOCLUS → ACOCUS corrected</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #6FC3D9;padding:16px 0px 0px 0px">
+<h3 style="font-size:28px;font-weight:600;color:#F7F6F2">Numbers</h3>
+<p style="font-size:24px;line-height:1.4;color:#B9C8CF">must match the table, the question or a constant</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #E08A3C;padding:16px 0px 0px 0px">
+<h3 style="font-size:28px;font-weight:600;color:#F7F6F2">Claims (new)</h3>
+<p style="font-size:24px;line-height:1.4;color:#B9C8CF">"≥ X", "below Y", "first Pareto front" checked for each MOF named</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;border-top:2px solid #6FC3D9;padding:16px 0px 0px 0px">
+<h3 style="font-size:28px;font-weight:600;color:#F7F6F2">Then</h3>
+<p style="font-size:24px;line-height:1.4;color:#B9C8CF">regenerate once with the problems listed, else flag it</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#8FA3AD">MOFChat · Team 09 · 13</p>
+<aside>This is a real first draft from testing the app. Every number in it exists somewhere in the results, so a check that only asks "is this number in the data" passes it. The claim check finds the property from the unit or the nearest property name, finds the MOFs from the IDs in the sentence or words like "these" and "all five", and checks each one against the database. Pareto-front claims are checked against the NSGA-II ranks. A failed draft is regenerated once with the exact problems listed; anything still wrong is flagged, and the verified table is always shown. What it does not check: free-text reasoning without numbers, such as a wrong formula.</aside>
+</section>

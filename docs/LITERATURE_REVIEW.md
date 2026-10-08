@@ -22,7 +22,7 @@ Every paper below was checked against its publisher page, arXiv record or the PD
 
 Supporting methods used but not tabulated: Sentence-BERT (Reimers & Gurevych, EMNLP 2019) for text embeddings; FAISS (Johnson, Douze & Jégou, *IEEE Trans. Big Data* 2021) for vector search; Zeo++ (Willems et al., *Microporous Mesoporous Mater.* 149, 134 (2012)) for the dataset's descriptors; split-conformal prediction for calibrated intervals; Gaussian process regression (course lecture 5).
 
-## Verification log for the review-1 table (`1st_Review_Data-driven/literature_review.md` and slides 8–9 of `DDMS_R1.pptx`)
+## Verification log for the review-1 table (`reviews/1st_review/literature_review.md` and slides 8–9 of `reviews/1st_review/DDMS_R1.pptx`)
 
 | Review-1 row | Status | Correction |
 |---|---|---|

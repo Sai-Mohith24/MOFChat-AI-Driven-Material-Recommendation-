@@ -17,7 +17,8 @@ SUGGESTIONS = {
     ":material/help: What is pore limiting diameter?": "What is the pore limiting diameter and why does it matter?",
 }
 
-agent = get_agent(st.session_state.get("use_llm", True), st.session_state.get("planner_mode", "hybrid"))
+agent = get_agent(st.session_state.get("use_llm", True), st.session_state.get("planner_mode", "hybrid"),
+                  st.session_state.get("model_id"))
 show_details = st.session_state.get("show_details", True)
 
 prompt = st.chat_input("e.g. Cu MOFs with open metal sites and PLD between 4 and 6 Å", submit_mode="disable")

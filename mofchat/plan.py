@@ -76,5 +76,7 @@ class QueryPlan:
             parts.append(f"aggregate {self.aggregate.get('func')}({self.aggregate.get('column') or '*'})")
         if self.target_property:
             parts.append(f"predict {self.target_property}")
+        if self.feature_values:
+            parts.append("from " + ", ".join(f"{k}={v:g}" for k, v in self.feature_values.items()))
         parts.append(f"limit {self.limit}")
         return "; ".join(parts)

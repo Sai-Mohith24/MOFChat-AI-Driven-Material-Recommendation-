@@ -7,8 +7,10 @@ validate_plan()   checks/normalises a plan produced by the LLM or the rule parse
                   contradictory constraints. Returns blocking `errors` (fed back to
                   the LLM for self-correction) and user-facing `notes`.
 validate_answer() checks the final LLM answer: every MOF ID must exist in the
-                  retrieved results and every number must be traceable to the
-                  results table, the query or a known constant.
+                  retrieved results, every number must be traceable to the
+                  results table, the query or a known constant, and every
+                  comparison claim about the results ("A, B and C have surface
+                  areas >= 6000 m2/g") must hold for each MOF it refers to.
 """
 
 from __future__ import annotations
@@ -87,8 +89,11 @@ def _bool(v) -> bool | None:
     return None
 
 
+_THOUSANDS = re.compile(r"[,\u202f\u2009\u00a0]")     # "12,020", or narrow/no-break spaces as LLMs write
+
+
 def query_numbers(query: str) -> list[float]:
-    t = re.sub(r"(\d),(\d{3})", r"\1\2", query.lower())
+    t = re.sub(r"(\d)[,\u202f\u2009\u00a0](\d{3})", r"\1\2", query.lower())
     nums = []
     for m in re.finditer(r"(?<![a-z\d])(-?\d+(?:\.\d+)?|\.\d+)\s*(k\b)?", t):
         v = float(m.group(1)) * (1000 if m.group(2) else 1)
@@ -98,6 +103,19 @@ def query_numbers(query: str) -> list[float]:
 
 def _grounded(value: float, query: str) -> bool:
     return any(abs(value - q) <= 1e-6 * max(1.0, abs(q)) for q in query_numbers(query))
+
+
+_EVERYDAY_NAMES = {"Density": ("light", "heav", "dense"), "Void_Fraction": ("porous",)}
+
+
+def _column_mentioned(col: str, query: str) -> bool:
+    """True if the question names the column (any alias, label, schema name or everyday word)."""
+    c, ql = COLUMN_BY_NAME[col], query.lower()
+    for plural, singular in _PLURALS:
+        ql = ql.replace(plural, singular)
+    names = set(c.aliases) | {c.label.lower(), c.name.lower(), c.name.lower().replace("_", " ")}
+    names |= set(_EVERYDAY_NAMES.get(col, ()))
+    return any(re.search(rf"(?<![a-z]){re.escape(n)}" + (r"(?![a-z])" if len(n) <= 3 else ""), ql) for n in names)
 
 
 # --------------------------------------------------------------------------
@@ -230,6 +248,17 @@ def validate_plan(raw: dict | QueryPlan, query: str = "", expand: bool = True,
         gg = GAS_ALIASES.get(str(g).strip().lower()) or (str(g) if str(g) in KINETIC_DIAMETERS_A else None)
         if gg and gg not in plan.gases:
             plan.gases.append(gg)
+
+    # Objectives the planner added on its own to an application question ("best MOFs for CO2 capture"
+    # ranked by gravimetric surface area) would silently replace the preset the explanation describes.
+    if check_grounding and query and plan.application and plan.objectives:
+        kept = [o for o in plan.objectives if _column_mentioned(o.column, query)]
+        dropped = [o for o in plan.objectives if o not in kept]
+        if dropped:
+            what = ", ".join(f"{o.direction}imise {o.column}" for o in dropped)
+            notes.append(f"Ignored ranking objectives your question does not mention ({what})" +
+                         ("." if kept else f"; the {APPLICATIONS[plan.application].label} preset decides the ranking."))
+            plan.objectives = kept
 
     # MOF IDs: must resolve in the DB and be grounded in the query text
     ql = query.lower()
@@ -422,9 +451,10 @@ def _id_candidates(text: str) -> list[str]:
 def _numbers(text: str) -> list[tuple[str, float, int, bool]]:
     """(raw text, value, decimals, is_percent) for every number in the text."""
     out = []
-    for m in re.finditer(r"(?<![\w.\-])(-?\d{1,3}(?:,\d{3})+(?:\.\d+)?|-?\d+(?:\.\d+)?)(?![\w])(\s*%)?", text):
+    for m in re.finditer(r"(?<![\w.\-])(-?\d{1,3}(?:[,\u202f\u2009\u00a0]\d{3})+(?:\.\d+)?|-?\d+(?:\.\d+)?)(?![\w])(\s*%)?",
+                         text):
         s = m.group(1)
-        v = float(s.replace(",", ""))
+        v = float(_THOUSANDS.sub("", s))
         dec = len(s.split(".")[1]) if "." in s else 0
         out.append((m.group(0).strip(), v, dec, bool(m.group(2))))
     return out
@@ -451,7 +481,118 @@ def _matches(v: float, dec: int, allowed: list[float]) -> bool:
     return False
 
 
-def validate_answer(text: str, results: pd.DataFrame | None, allowed: list[float]) -> dict:
+# Comparison claims such as "the remaining three (A, B, C) have surface areas >= 6000 m2/g":
+# every number in them can match *some* value in the results, yet the claim is false for B.
+_CLAIM = re.compile(
+    r"(?P<cmp>≥|>=|≤|<=|>|<|\b(?:at least|no less than|not less than|at most|no more than|not more than|up to|"
+    r"above|over|more than|greater than|higher than|exceeding|exceeds?|below|under|less than|lower than|"
+    r"smaller than)\b)\s*~?\s*(?P<num>\d{1,3}(?:[,\u202f\u2009\u00a0]\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![\w.])\s*(?P<pct>%)?"
+    r"\s*(?P<unit>m²/g|m2/g|m\^2/g|m²/cm³|m2/cm3|m\^2/cm\^3|g/cm³|g/cm3|g cm-3|cm³/g|cm3/g|Å|angstroms?)?",
+    re.I)
+_UPPER = re.compile(r"≤|<=|<|at most|no more than|not more than|up to|below|under|less than|lower than|smaller than",
+                    re.I)
+_UNIT_NORM = {"m²/g": "m²/g", "m2/g": "m²/g", "m^2/g": "m²/g", "m²/cm³": "m²/cm³", "m2/cm3": "m²/cm³",
+              "m^2/cm^3": "m²/cm³", "g/cm³": "g/cm³", "g/cm3": "g/cm³", "g cm-3": "g/cm³", "cm³/g": "cm³/g",
+              "cm3/g": "cm³/g", "å": "Å", "angstrom": "Å", "angstroms": "Å"}
+_COLLECTIVE = re.compile(r"\b(?:these|those|they|both|each|every|remaining|all (?:of )?(?:them|these|those|the|\d+|"
+                         r"two|three|four|five|six|seven|eight|nine|ten)|the (?:other|top|selected|returned|listed|"
+                         r"recommended))\b", re.I)
+_NEGATION = re.compile(r"\b(?:no|not|none|never|nothing|without|neither|nor)\b|n't", re.I)
+_EXCEPTION = re.compile(r"\b(?:except|apart from|other than|excluding|besides|but)\b", re.I)
+_FRONT = re.compile(r"\b(?:(?P<ord>first|second|third|fourth|fifth)\s+(?:pareto\s+)?front|"
+                    r"(?:pareto\s+)?front\s*(?:#|no\.?\s*|number\s+)?(?P<n>\d+))\b", re.I)
+_ORDINALS = {"first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5}
+_PLURALS = (("densities", "density"), ("areas", "area"), ("fractions", "fraction"), ("diameters", "diameter"),
+            ("volumes", "volume"), ("porosities", "porosity"))
+
+
+def _claim_column(before: str, unit: str | None) -> str | None:
+    """Column a comparison refers to: from its unit, else from the nearest column name before it."""
+    cands = [c for c in NUMERIC_COLUMNS if unit is None or COLUMN_BY_NAME[c].unit == unit]
+    window = before[-80:].lower()
+    for plural, singular in _PLURALS:
+        window = window.replace(plural, singular)
+    best, best_key = None, None
+    for c in cands:
+        col = COLUMN_BY_NAME[c]
+        for alias in set(col.aliases) | {col.label.lower()}:
+            for m in re.finditer(rf"(?<![a-z]){re.escape(alias)}(?![a-z])", window):
+                key = (m.end(), len(alias))                  # nearest to the comparator, then most specific
+                if best_key is None or key > best_key:
+                    best, best_key = c, key
+    if best is None and unit == "m²/g":
+        best = "Surface_Area"
+    return best if best is not None else (cands[0] if unit is not None and len(cands) == 1 else None)
+
+
+def _claim_ids(sent: str, at: int, result_ids: list[str]) -> list[str]:
+    """MOFs a claim at position `at` refers to: those named before it in the sentence, else those named
+    after it, else all results if the sentence speaks about them collectively ("these", "all five")."""
+    mentioned = []
+    for rid in result_ids:
+        hit = re.search(rf"(?<![A-Za-z0-9_]){re.escape(rid)}(?![A-Za-z0-9_])", sent, re.I)
+        if hit:
+            mentioned.append((hit.start(), rid))
+    ids = [r for p, r in mentioned if p < at] or [r for _, r in mentioned]
+    if ids:
+        return ids
+    if _COLLECTIVE.search(sent[:at]) and not _EXCEPTION.search(sent):
+        return list(result_ids)
+    return []
+
+
+def _false_claims(text: str, results: pd.DataFrame, skip_values: list[float]) -> list[str]:
+    result_ids = list(results["MOF_ID"])
+    if not result_ids:
+        return []
+    out, full = [], None
+    fronts = dict(zip(results["MOF_ID"], results["pareto_front"])) if "pareto_front" in results else {}
+    for sent in re.split(r"(?<=[.!?])\s+|\n+", text):
+        for m in _CLAIM.finditer(sent):
+            before = sent[:m.start()]
+            if _NEGATION.search(before):
+                continue
+            raw_num = m.group("num")
+            thr = float(_THOUSANDS.sub("", raw_num))
+            if any(abs(thr - s) <= 1e-9 * max(1.0, abs(s)) for s in skip_values):
+                continue                               # restates the user's own threshold
+            unit = _UNIT_NORM.get((m.group("unit") or "").lower(), m.group("unit")) if m.group("unit") else None
+            col = _claim_column(before, unit)
+            if col is None:
+                continue
+            if m.group("pct"):
+                if col != "Void_Fraction":
+                    continue
+                thr /= 100
+            ids = _claim_ids(sent, m.start(), result_ids)
+            if not ids:
+                continue
+            if full is None:
+                full = db.get_rows(result_ids).set_index("MOF_ID")
+            dec = len(raw_num.split(".")[1]) if "." in raw_num else 0
+            tol = 0.5 * 10 ** (-dec) / (100 if m.group("pct") else 1) + 1e-9
+            upper = bool(_UPPER.fullmatch(m.group("cmp").strip()))
+            for rid in ids:
+                if rid not in full.index or pd.isna(full.at[rid, col]):
+                    continue
+                v = float(full.at[rid, col])
+                if (upper and v > thr + tol) or (not upper and v < thr - tol):
+                    out.append(f"\"{m.group(0).strip()}\" is false for {rid} ({COLUMN_BY_NAME[col].label} = {v:g})")
+        for m in _FRONT.finditer(sent) if fronts else ():
+            if _NEGATION.search(sent[:m.start()]):
+                continue
+            n = int(m.group("n")) if m.group("n") else _ORDINALS[m.group("ord").lower()]
+            for rid in _claim_ids(sent, m.start(), result_ids):
+                f = fronts.get(rid)
+                if f is not None and not pd.isna(f) and int(f) != n:
+                    out.append(f"\"{m.group(0).strip()}\" is false for {rid} (Pareto front {int(f)})")
+    return list(dict.fromkeys(out))
+
+
+def validate_answer(text: str, results: pd.DataFrame | None, allowed: list[float],
+                    skip_values: list[float] = ()) -> dict:
+    """`skip_values`: the user's own thresholds; restating them is not a claim about the results
+    (closest-match answers to impossible requests do exactly that)."""
     result_ids = list(results["MOF_ID"]) if results is not None and "MOF_ID" in results else []
     rid_upper = {r.upper(): r for r in result_ids}
     idx = db.id_index()
@@ -480,11 +621,13 @@ def validate_answer(text: str, results: pd.DataFrame | None, allowed: list[float
     fixed = text
     for bad, good in corrected.items():
         fixed = re.sub(rf"(?<![A-Za-z0-9_]){re.escape(bad)}(?![A-Za-z0-9_])", good, fixed)
+    false_claims = _false_claims(fixed, results, list(skip_values)) if result_ids else []
     return {
-        "ok": not (invalid or corrected or unverified),
+        "ok": not (invalid or corrected or unverified or false_claims),
         "invalid_ids": invalid,
         "corrected_ids": corrected,
         "unretrieved_ids": unretrieved,
         "unverified_numbers": list(dict.fromkeys(unverified)),
+        "false_claims": false_claims,
         "text": fixed,
     }

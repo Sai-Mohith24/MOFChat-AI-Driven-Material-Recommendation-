@@ -46,6 +46,36 @@ else:
         p = EVAL_DIR / "benchmark_results.csv"
         if p.exists():
             st.dataframe(pd.read_csv(p), hide_index=True)
+    mc = summary.get("model_comparison") or {}
+    if mc:
+        dm = summary.get("default_model")
+        st.subheader("Which free LLM plans best? (model comparison)", anchor=False)
+        st.markdown("Every model is tested on its own with automatic fallback switched off. *LLM alone* is the "
+                    "single-shot planner; *hybrid* adds the validator and the rule parser's explicit facts. "
+                    f"The tables above use **{mc.get(dm, {}).get('label', dm)}**, the best model on the held-out set.")
+        st.dataframe(pd.DataFrame([{
+            "model": v["label"] + (" (default)" if k == dm else ""), "provider": v["provider"],
+            "held-out: LLM alone": v.get("held-out_single_shot"), "held-out: hybrid": v.get("held-out_hybrid"),
+            "development: LLM alone": v.get("development_single_shot"),
+            "development: hybrid": v.get("development_hybrid"),
+            "median planning time (s)": v.get("held-out_planner_latency_s"),
+            "provider errors": sum(x for x in (v.get("development_provider_errors"),
+                                               v.get("held-out_provider_errors")) if x)} for k, v in mc.items()]),
+            hide_index=True,
+            column_config={c: st.column_config.NumberColumn(format="%.1f%%") for c in (
+                "held-out: LLM alone", "held-out: hybrid", "development: LLM alone", "development: hybrid")})
+        if (EVAL_DIR / "model_comparison.png").exists():
+            st.image(str(EVAL_DIR / "model_comparison.png"))
+        ans = [(v["label"], v["answers"]) for v in mc.values() if v.get("answers")]
+        if ans:
+            st.markdown("**Answer writing**, 16 questions per model, checked by the answer validator:")
+            st.dataframe(pd.DataFrame([{"model": label, "LLM call failed": a.get("answer_llm_failures"),
+                                        "first drafts with a problem": a["first_drafts_with_unverifiable_content"],
+                                        "of which false comparison claims": a.get("first_drafts_with_false_claims"),
+                                        "regenerated": a["answers_regenerated"],
+                                        "still flagged": a["final_answers_with_flagged_content"],
+                                        "seconds per answer": a["mean_seconds_per_answer"]} for label, a in ans]),
+                         hide_index=True)
     if summary.get("answer_validation"):
         st.subheader("Answer validation (hallucination check)", anchor=False)
         st.json(summary["answer_validation"], expanded=False)

@@ -1,8 +1,11 @@
 """
 evaluate.py - end-to-end evaluation of MOFChat.
 
-  python evaluate.py            # full run (uses Ollama/llama3 if it is running)
+  python evaluate.py            # full run: compares the free cloud models and local Ollama models
   python evaluate.py --no-llm   # only the systems that do not need the LLM
+
+0. Model comparison: every model in COMPARE_MODELS on both question sets, fallback off.
+   The best one on the held-out set is used for the tables below.
 
 1. Retrieval benchmark (benchmark/queries.json, 64 labelled questions in 10 categories).
    Every question has a hand-written gold plan; the gold answer is obtained by running
@@ -14,12 +17,12 @@ evaluate.py - end-to-end evaluation of MOFChat.
      * LLM planner + validator (grounding, self-correction, rule fallback)
      * Hybrid (default): LLM plan + explicit facts from the rule parser + validator
    Metrics: exact answer match, constraint precision@k, plan accuracy, latency.
-2. Answer validation: how often Llama 3's first draft contains unverifiable MOF IDs or numbers,
+2. Answer validation: how often each model's first draft contains unverifiable MOF IDs or numbers,
    and what remains after the validator's retry/correction.
 3. Knowledge retrieval: hit@1 / hit@3 of the expected source; off-topic rejection.
 
-Writes artifacts/eval/{summary.json, benchmark_results.csv, benchmark_by_category.png}
-and docs/RESULTS.md.
+Writes artifacts/eval/{summary.json, benchmark_results.csv, benchmark_by_category.png,
+model_comparison.csv, model_comparison.png} and docs/RESULTS.md.
 """
 
 import argparse
@@ -127,7 +130,8 @@ class TwoTowerBaseline:
 
 
 # ------------------------------------------------------------- benchmark run
-def run_benchmark(use_llm: bool, path: Path = BENCH) -> tuple[pd.DataFrame, dict]:
+def run_benchmark(use_llm: bool, path: Path = BENCH, model_id: str | None = None,
+                  include_baselines: bool = True) -> tuple[pd.DataFrame, dict]:
     queries = json.loads(path.read_text())
     rules_agent = MOFChatAgent(use_llm=False)
     golds = {}
@@ -139,20 +143,24 @@ def run_benchmark(use_llm: bool, path: Path = BENCH) -> tuple[pd.DataFrame, dict
         golds[q["id"]] = g
 
     systems: dict[str, callable] = {}
-    baseline = TwoTowerBaseline() if BASELINE_INDEX.exists() else None
-    if baseline:
-        systems["Review-1 two-tower (shipped)"] = lambda q, g: (None, baseline.run(q["question"], g["plan"].limit))
-    systems["Rules planner (no LLM)"] = lambda q, g: _agent_run(rules_agent, q)
+    if include_baselines:
+        baseline = TwoTowerBaseline() if BASELINE_INDEX.exists() else None
+        if baseline:
+            systems["Review-1 two-tower (shipped)"] = lambda q, g: (None, baseline.run(q["question"], g["plan"].limit))
+        systems["Rules planner (no LLM)"] = lambda q, g: _agent_run(rules_agent, q)
 
-    llm_ok = use_llm and llm.status()[0]
+    llm_ok = use_llm and llm.status(model_id)[0]
     if llm_ok:
         if not hasattr(llm.llm_plan, "cache_info"):
             llm.llm_plan = _cached_llm_plan(llm.llm_plan)
-        llm_agent = MOFChatAgent(use_llm=True, planner_mode="llm")
-        hybrid_agent = MOFChatAgent(use_llm=True, planner_mode="hybrid")
+        llm_agent = MOFChatAgent(use_llm=True, planner_mode="llm", model_id=model_id)
+        hybrid_agent = MOFChatAgent(use_llm=True, planner_mode="hybrid", model_id=model_id)
 
         def single_shot(q, g):
-            obj, _ = llm.llm_plan(q["question"], ())
+            try:
+                obj, _, _ = llm.llm_plan(q["question"], (), model_id)
+            except llm.LLMError:
+                return None, {"intent": "error", "llm_failed": True}
             if obj is None:
                 return None, {"intent": "error"}
             obj["source"] = "llm"
@@ -179,8 +187,10 @@ def run_benchmark(use_llm: bool, path: Path = BENCH) -> tuple[pd.DataFrame, dict
                 ids = got.get("ids") or []
                 prec = (sum(i in g["filter_ids"] for i in ids) / len(ids)) if ids and not got.get("relaxed") else 0.0
             pk = plan_key(plan)
-            rows.append({"system": name, "id": q["id"], "category": q["category"], "question": q["question"],
-                         "exact": ok, "precision_at_k": prec,
+            rows.append({"system": name, "model": model_id if name not in ("Review-1 two-tower (shipped)",
+                                                                           "Rules planner (no LLM)") else "",
+                         "id": q["id"], "category": q["category"], "question": q["question"],
+                         "exact": ok, "precision_at_k": prec, "llm_failed": bool(got.get("llm_failed")),
                          "plan_correct": None if plan is None and name.startswith("Review") else pk == plan_key(g["plan"]),
                          "latency_s": round(dt, 3),
                          "plan": plan.summary() if plan is not None else "",
@@ -196,58 +206,67 @@ def run_benchmark(use_llm: bool, path: Path = BENCH) -> tuple[pd.DataFrame, dict
 def _cached_llm_plan(fn):
     """Memoise LLM plans (temperature 0) so the llm-only and hybrid systems see identical LLM output."""
     @functools.lru_cache(maxsize=None)
-    def cached(question, fb):
-        return fn(question, [tuple(f) for f in fb])
+    def cached(question, fb, model_id):
+        return fn(question, [tuple(f) for f in fb], model_id)
 
-    def wrapped(question, feedback=()):
-        return cached(question, tuple(tuple(f) for f in feedback))
+    def wrapped(question, feedback=(), model_id=None):
+        return cached(question, tuple(tuple(f) for f in feedback), model_id)
     wrapped.cache_info = cached.cache_info
     return wrapped
 
 
 def _agent_run(agent: MOFChatAgent, q):
     plan, trace = agent.plan(q["question"])
-    if agent.use_llm and any("LLM planner failed" in t for t in trace):
-        raise RuntimeError(f"LLM planner crashed on {q['id']}: {trace}")
+    failed = agent.use_llm and any("LLM planner failed" in t for t in trace)   # rate limit / outage
     if plan.intent == "knowledge":
         snippets = knowledge.search(q["question"], 3)
         if not knowledge.is_relevant(snippets):
             plan.intent = "out_of_scope"
-    return plan, outcome(agent, plan)
+    got = outcome(agent, plan)
+    got["llm_failed"] = failed
+    return plan, got
 
 
 # ------------------------------------------------------- answer validation
 ANSWER_QUESTIONS = ["B1", "B2", "B5", "C1", "C6", "D1", "D7", "E1", "E3", "F1", "F2", "F3", "G1", "G4", "H1", "H4"]
 
 
-def run_answer_validation() -> dict | None:
-    if not llm.status()[0]:
+def run_answer_validation(model_id: str | None = None) -> dict | None:
+    if not llm.status(model_id)[0]:
         return None
     queries = {q["id"]: q for q in json.loads(BENCH.read_text())}
-    agent = MOFChatAgent(use_llm=True, planner_mode="hybrid")
+    agent = MOFChatAgent(use_llm=True, planner_mode="hybrid", model_id=model_id)
     recs = []
     for qid in ANSWER_QUESTIONS:
         t = time.time()
         r = agent.answer(queries[qid]["question"])
         v = r.validation or {}
         first = v.get("first_draft", {})
-        recs.append({"id": qid, "seconds": round(time.time() - t, 1),
+        recs.append({"id": qid, "seconds": round(time.time() - t, 1), "models_used": r.models_used,
+                     "answer_llm_failed": any("LLM answer failed" in x for x in r.trace),
                      "draft_invalid_ids": first.get("invalid_ids", []),
                      "draft_corrected_ids": first.get("corrected_ids", {}),
                      "draft_unverified_numbers": first.get("unverified_numbers", []),
+                     "draft_false_claims": first.get("false_claims", []),
                      "final_invalid_ids": v.get("invalid_ids", []),
                      "final_unverified_numbers": v.get("unverified_numbers", []),
+                     "final_false_claims": v.get("false_claims", []),
                      "auto_corrected_ids": v.get("corrected_ids", {}), "attempts": v.get("attempts", 1)})
         print(f"  {qid}: draft ids={first.get('invalid_ids')} corr={first.get('corrected_ids')} "
-              f"nums={first.get('unverified_numbers')} -> final ids={v.get('invalid_ids')} "
-              f"nums={v.get('unverified_numbers')} ({recs[-1]['seconds']}s)")
+              f"nums={first.get('unverified_numbers')} claims={first.get('false_claims')} -> final "
+              f"ids={v.get('invalid_ids')} nums={v.get('unverified_numbers')} claims={v.get('false_claims')} "
+              f"({recs[-1]['seconds']}s)")
     n = len(recs)
-    draft_bad = sum(bool(r["draft_invalid_ids"] or r["draft_corrected_ids"] or r["draft_unverified_numbers"]) for r in recs)
-    final_bad = sum(bool(r["final_invalid_ids"] or r["final_unverified_numbers"]) for r in recs)
+    draft_bad = sum(bool(r["draft_invalid_ids"] or r["draft_corrected_ids"] or r["draft_unverified_numbers"]
+                         or r["draft_false_claims"]) for r in recs)
+    final_bad = sum(bool(r["final_invalid_ids"] or r["final_unverified_numbers"] or r["final_false_claims"])
+                    for r in recs)
     return {"n_answers": n,
+            "answer_llm_failures": sum(r["answer_llm_failed"] for r in recs),   # template answer used instead
             "first_drafts_with_unverifiable_content": draft_bad,
             "first_drafts_with_wrong_or_garbled_ids": sum(bool(r["draft_invalid_ids"] or r["draft_corrected_ids"]) for r in recs),
             "first_drafts_with_unverified_numbers": sum(bool(r["draft_unverified_numbers"]) for r in recs),
+            "first_drafts_with_false_claims": sum(bool(r["draft_false_claims"]) for r in recs),
             "answers_regenerated": sum(r["attempts"] > 1 for r in recs),
             "final_answers_with_flagged_content": final_bad,
             "mean_seconds_per_answer": round(float(np.mean([r["seconds"] for r in recs])), 1),
@@ -330,25 +349,35 @@ def plot(df: pd.DataFrame, path: Path) -> None:
     plt.close(fig)
 
 
+RERUN_LABEL = {"answers_rerun_on": "answer validation re-run", "knowledge_rerun_on": "knowledge retrieval re-run",
+               "models_rerun_on": "model summary recomputed from the saved results"}
+
+
 def write_results_md(summary: dict) -> None:
     pm = json.loads((PROPERTY_MODEL_DIR / "metrics.json").read_text()) if (PROPERTY_MODEL_DIR / "metrics.json").exists() else {}
     em = json.loads((FT_EMBED_DIR / "metrics.json").read_text()) if (FT_EMBED_DIR / "metrics.json").exists() else {}
     b = summary["benchmark"]
+    dm = summary.get("default_model")
+    dm_label = llm.BY_ID[dm].label if dm in llm.BY_ID else "the LLM"
     L = ["# MOFChat - results", "",
-         f"_Generated by `python evaluate.py` on {summary['generated']}. Numbers are copied from "
-         "`artifacts/` - do not edit by hand._", "",
+         f"_Generated by `python evaluate.py` on {summary['generated']}"
+         + "".join(f"; {RERUN_LABEL.get(k, k)} on {v}" for k, v in summary.items() if k in RERUN_LABEL)
+         + ". Numbers are copied from `artifacts/` - do not edit by hand._", "",
          f"## 1. Retrieval benchmark ({b['n_queries']} labelled questions, 10 categories)", "",
          "A system is counted correct only if it returns exactly the MOFs (or the count/average) that the "
          "hand-written gold plan returns from the database.", "",
          "| System | Exact answer match | Constraint precision@k | Plan accuracy | Planning latency* |",
          "|---|---:|---:|---:|---:|"]
+    llm_lat = (summary.get("model_comparison") or {}).get(dm, {}).get("held-out_planner_latency_s")
     for name, s in b["systems"].items():
         f = lambda v, suf="%": "-" if v is None else f"{v}{suf}"  # noqa: E731
+        lat = llm_lat if llm_lat is not None and name.startswith(("LLM", "Hybrid")) else s["mean_latency_s"]
         L.append(f"| {name} | {f(s['result_accuracy'])} | {f(s['constraint_precision_at_k'])} | "
-                 f"{f(s['plan_accuracy'])} | {s['mean_latency_s']:.2f} s |")
-    L += ["", "\\* LLM plans are cached across the three LLM-based systems (temperature 0, so the outputs are identical); "
-          "only the single-shot row shows the real cost of one Llama 3 planning call. Retries and the full answer "
-          "(planning + retrieval + answer writing + validation) are timed in section 2."]
+                 f"{f(s['plan_accuracy'])} | {lat:.2f} s |")
+    L += ["", f"\\* LLM rows: median time of one {dm_label} planning call on the held-out run of the model comparison (the plans "
+          "are cached and reused across the three LLM systems, temperature 0; the median leaves out free-tier "
+          "rate-limit waits). Validation and the hybrid merge add under 0.01 s. The full answer (planning + "
+          "retrieval + answer writing + validation) is timed in section 2."]
     cats = list(next(iter(b["systems"].values()))["by_category"])
     L += ["", "Exact answer match by question type (%):", "",
           "| Category | " + " | ".join(b["systems"]) + " |", "|---|" + "---:|" * len(b["systems"])]
@@ -374,13 +403,63 @@ def write_results_md(summary: dict) -> None:
     L += ["", "![benchmark](../artifacts/eval/benchmark_by_category.png)", "",
           "For context, ChatMOF (GPT-4) reports 96.9 % accuracy on its own 100 search questions "
           "(excluding token-limit failures); the question sets differ, so the numbers are not directly comparable.", ""]
+    mc = summary.get("model_comparison") or {}
+    if mc:
+        dm = summary.get("default_model")
+        L += ["## 1b. Which free LLM is best? (model comparison)", "",
+              "Each model is tested on its own, with automatic fallback switched off. OpenRouter free accounts allow "
+              "about 50 requests per day, so the OpenRouter model was tested on the held-out set only. "
+              f"The main tables above use **{mc.get(dm, {}).get('label', dm)}**, the best model on the held-out set.", "",
+              "| Model | Provider | Held-out: LLM alone | Held-out: hybrid | Development: LLM alone | Development: hybrid "
+              "| Median planning time per call (dev / held-out) | Provider errors* |",
+              "|---|---|---:|---:|---:|---:|---:|---:|"]
+        f = lambda v, suf="%": "-" if v is None else f"{v}{suf}"  # noqa: E731
+
+        def alone(v, st):
+            a = v.get(f"{st}_single_shot_answered")
+            return f(v.get(f"{st}_single_shot")) + (f" ({a[0]}% of the {a[1]} answered)" if a else "")
+        for mid, v in mc.items():
+            errs = sum(x for x in (v.get("development_provider_errors"), v.get("held-out_provider_errors")) if x)
+            quota = " †" if v.get("development_quota_exhausted") or v.get("held-out_quota_exhausted") else ""
+            L.append(f"| {v['label']}{' **(default)**' if mid == dm else ''}{quota} | {v['provider']} | "
+                     f"{alone(v, 'held-out')} | {f(v.get('held-out_hybrid'))} | "
+                     f"{alone(v, 'development')} | {f(v.get('development_hybrid'))} | "
+                     f"{f(v.get('development_planner_latency_s'), '')} / {f(v.get('held-out_planner_latency_s'), ' s')} "
+                     f"| {errs} |")
+        L += ["", "\\* Requests that failed at the provider (rate limit, overload, outage). In the app, these "
+              "fall back to the next model automatically. Free-tier latency also depends on provider load at the "
+              "time of the run, so the two medians can differ a lot for the same model."]
+        if any(v.get("development_quota_exhausted") or v.get("held-out_quota_exhausted") for v in mc.values()):
+            L += ["", "† The model's free daily quota ran out during the run (429 RESOURCE_EXHAUSTED), so most "
+                  "planning calls failed and its scores would measure the rule-parser fallback, not the model; "
+                  "they are left out (\\-) and the model is not considered for the default."]
+        L += ["",
+              "![models](../artifacts/eval/model_comparison.png)", ""]
+        ans = [(v["label"], v["answers"]) for v in mc.values() if v.get("answers")
+               and not v.get("held-out_quota_exhausted")]
+        if ans:
+            L += ["Answer writing (16 questions per model, checked by the answer validator):", "",
+                  "| Model | LLM call failed (template used) | First drafts with any problem "
+                  "| of which false comparison claims | Regenerated | Still flagged | Seconds per full answer |",
+                  "|---|---:|---:|---:|---:|---:|---:|"]
+            for label, a in ans:
+                dash = lambda k: "-" if a.get(k) is None else a[k]  # noqa: E731
+                L.append(f"| {label} | {dash('answer_llm_failures')} | "
+                         f"{a['first_drafts_with_unverifiable_content']} of {a['n_answers']} | "
+                         f"{dash('first_drafts_with_false_claims')} | {a['answers_regenerated']} | "
+                         f"{a['final_answers_with_flagged_content']} | {a['mean_seconds_per_answer']} |")
+            L.append("")
     av = summary.get("answer_validation")
     if av:
         L += ["## 2. Answer validation (hallucination check)", "",
-              f"- Llama 3 answers generated: {av['n_answers']}",
-              f"- First drafts containing at least one unverifiable MOF ID or number: "
-              f"{av['first_drafts_with_unverifiable_content']} ({av['first_drafts_with_wrong_or_garbled_ids']} with wrong/garbled IDs, "
-              f"{av['first_drafts_with_unverified_numbers']} with unverified numbers)",
+              f"- {dm_label} answers generated: {av['n_answers']}"
+              + (f" ({av['answer_llm_failures']} LLM calls failed; a template answer was used)"
+                 if av.get("answer_llm_failures") else ""),
+              f"- First drafts with at least one problem: {av['first_drafts_with_unverifiable_content']} "
+              f"({av['first_drafts_with_wrong_or_garbled_ids']} with wrong/garbled IDs, "
+              f"{av['first_drafts_with_unverified_numbers']} with unverified numbers, "
+              f"{av.get('first_drafts_with_false_claims', '-')} with false comparison claims such as "
+              "\"A, B and C have surface areas >= 6000 m²/g\" when B has less)",
               f"- Answers regenerated after validator feedback: {av['answers_regenerated']}",
               f"- Final answers still carrying a validator warning: {av['final_answers_with_flagged_content']}",
               f"- Mean time per full answer: {av['mean_seconds_per_answer']} s", ""]
@@ -425,33 +504,194 @@ def write_results_md(summary: dict) -> None:
     (PROJECT_ROOT / "docs" / "RESULTS.md").write_text("\n".join(L))
 
 
+COMPARE_MODELS = ["llama3-local", "gpt-oss-120b", "qwen3.8-27b",
+                  "gemini-3.5-flash", "gemini-3.1-flash-lite", "nemotron-super-free"]
+
+
+def run_model_comparison(models: list[str]) -> pd.DataFrame:
+    """Every model on both question sets, one model at a time (no fallback), so each score belongs to
+    the model named. OpenRouter free accounts allow ~50 requests/day, so those models get the held-out
+    set only."""
+    frames = []
+    for mid in models:
+        ok, why = llm.availability(mid)
+        if not ok:
+            print(f"\n### skipping {mid}: {why}")
+            continue
+        sets = [("held-out", HELDOUT)] if llm.BY_ID[mid].provider is llm.Provider.OPENROUTER else \
+            [("development", BENCH), ("held-out", HELDOUT)]
+        for set_name, path in sets:
+            print(f"\n##### model {mid} - {set_name}")
+            d, _ = run_benchmark(True, path, model_id=mid, include_baselines=False)
+            frames.append(d.assign(set=set_name))
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+
+
+def summarise_models(dc: pd.DataFrame, answers: dict) -> dict:
+    out = {}
+    for mid, g in dc.groupby("model", sort=False):
+        spec = llm.BY_ID[mid]
+        row = {"label": spec.label, "provider": llm.PROVIDER_LABEL[spec.provider]}
+        for set_name, gs in g.groupby("set", sort=False):
+            ss = gs[gs.system == "LLM planner, single shot (no validator)"]
+            # most calls failed at the provider (e.g. the free daily quota ran out): the scores would
+            # measure the rule-parser fallback, not the model, so they are not reported
+            exhausted = len(ss) > 0 and ss.llm_failed.mean() > 0.5
+            if exhausted:
+                row[f"{set_name}_quota_exhausted"] = True
+            for sysname, key in (("LLM planner, single shot (no validator)", "single_shot"),
+                                 ("LLM planner + validator", "validated"), ("Hybrid (default)", "hybrid")):
+                x = gs[gs.system == sysname]
+                if len(x):
+                    row[f"{set_name}_{key}"] = None if exhausted else round(100 * x.exact.mean(), 1)
+            answered = ss[~ss.llm_failed.astype(bool)]
+            if not exhausted and 0 < len(answered) < len(ss):     # provider errors count as wrong above
+                row[f"{set_name}_single_shot_answered"] = [round(100 * answered.exact.mean(), 1), len(answered)]
+            # median, not mean: on free tiers about one call in four waits up to a minute for the budget
+            row[f"{set_name}_planner_latency_s"] = round(float(ss.latency_s.median()), 2) if len(ss) and not exhausted \
+                else None
+            row[f"{set_name}_provider_errors"] = int(ss.llm_failed.sum()) if len(ss) else None
+        if mid in answers and answers[mid]:
+            a = answers[mid]
+            row["answers"] = {k: a.get(k) for k in ("n_answers", "answer_llm_failures", "first_drafts_with_unverifiable_content",
+                                                     "first_drafts_with_false_claims", "answers_regenerated",
+                                                     "final_answers_with_flagged_content", "mean_seconds_per_answer")}
+        out[mid] = row
+    return out
+
+
+def plot_models(models: dict, path: Path) -> None:
+    names = [v["label"] for v in models.values()]
+    num = lambda v, k: np.nan if v.get(k) is None else v[k]  # noqa: E731
+    dev = [num(v, "development_hybrid") for v in models.values()]
+    held = [num(v, "held-out_hybrid") for v in models.values()]
+    single = [num(v, "held-out_single_shot") for v in models.values()]
+    x = np.arange(len(names))
+    fig, ax = plt.subplots(figsize=(12, 5.5))
+    ax.bar(x - 0.27, single, 0.27, label="held-out, LLM alone (single shot)", color="#f58518")
+    ax.bar(x, held, 0.27, label="held-out, hybrid (LLM + validator + rules)", color="#4c78a8")
+    ax.bar(x + 0.27, dev, 0.27, label="development set, hybrid", color="#9ecae9")
+    for xi, v in zip(x, held):
+        if not np.isnan(v):
+            ax.text(xi, v + 1, f"{v:.0f}", ha="center", fontsize=8)
+    ax.set_xticks(x, names, rotation=20, ha="right")
+    ax.set_ylim(0, 108)
+    ax.set_ylabel("exact answer match (%)")
+    ax.set_title("Which free LLM plans MOF queries best?")
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.38), ncol=3, frameon=False)
+    plt.tight_layout()
+    plt.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def pick_default(models: dict) -> str | None:
+    """Best held-out hybrid accuracy, then development accuracy, then fewer provider errors, then speed."""
+    scored = []
+    for mid, v in models.items():
+        if v.get("held-out_hybrid") is None or v.get("development_hybrid") is None:
+            continue     # must have been tested on both sets
+        scored.append((-v["held-out_hybrid"], -v["development_hybrid"],
+                       (v.get("development_provider_errors") or 0) + (v.get("held-out_provider_errors") or 0),
+                       v.get("held-out_planner_latency_s") or 99, mid))
+    return sorted(scored)[0][-1] if scored else None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-llm", action="store_true")
-    args = ap.parse_args()
+    ap.add_argument("--models", default=",".join(COMPARE_MODELS),
+                    help="comma-separated model ids to compare (see python -m mofchat.llm --list)")
+    ap.add_argument("--model", default=None, help="model for the main tables (default: best in the comparison)")
+    ap.add_argument("--answers", default="llama3-local,gpt-oss-120b,gemini-3.1-flash-lite,qwen3.8-27b",
+                    help="models whose written answers are checked by the answer validator")
+    ap.add_argument("--only", choices=["answers", "knowledge", "models"], default=None,
+                    help="re-run only the answer validation or the knowledge-retrieval test (after changing the "
+                         "validator or the knowledge notes) and update summary.json and docs/RESULTS.md; "
+                         "the benchmark results are kept")
+    args = ap.parse_known_args()[0]
     EVAL_DIR.mkdir(parents=True, exist_ok=True)
-    df, gold_info = run_benchmark(use_llm=not args.no_llm)
+    llm.FALLBACK_ENABLED = False          # attribute every result to exactly one model
+    llm.MAX_WAIT_S = 180.0                # wait for free-tier budgets instead of falling back
+
+    if args.only:
+        summary = json.loads((EVAL_DIR / "summary.json").read_text())
+        if args.only == "knowledge":
+            summary["knowledge_retrieval"] = run_knowledge_eval()
+        if args.only == "models":           # no API calls: recompute from the saved per-question results
+            old = summary.get("model_comparison") or {}
+            answers = {m: v["answers"] for m, v in old.items() if v.get("answers")}
+            summary["model_comparison"] = summarise_models(pd.read_csv(EVAL_DIR / "model_comparison.csv"), {})
+            for m, a in answers.items():
+                if m in summary["model_comparison"]:
+                    summary["model_comparison"][m]["answers"] = a
+            plot_models(summary["model_comparison"], EVAL_DIR / "model_comparison.png")
+        for mid in [m.strip() for m in args.answers.split(",") if m.strip()] if args.only == "answers" else []:
+            if not llm.availability(mid)[0]:
+                continue
+            print(f"\n=== Answer validation: {mid} ===")
+            a = run_answer_validation(mid)
+            if mid == summary.get("default_model"):
+                summary["answer_validation"] = a
+            row = summary.get("model_comparison", {}).get(mid)
+            if row is not None and a:
+                row["answers"] = {k: a.get(k) for k in ("n_answers", "answer_llm_failures",
+                                                        "first_drafts_with_unverifiable_content",
+                                                        "first_drafts_with_false_claims", "answers_regenerated",
+                                                        "final_answers_with_flagged_content",
+                                                        "mean_seconds_per_answer")}
+        summary[f"{args.only}_rerun_on"] = time.strftime("%Y-%m-%d %H:%M")
+        (EVAL_DIR / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
+        write_results_md(summary)
+        return
+
+    models_summary, dc, default_model = {}, pd.DataFrame(), None
+    if not args.no_llm:
+        llm.llm_plan = _cached_llm_plan(llm.llm_plan)
+        dc = run_model_comparison([m.strip() for m in args.models.split(",") if m.strip()])
+        if len(dc):
+            dc.to_csv(EVAL_DIR / "model_comparison.csv", index=False)
+        models_summary = summarise_models(dc, {}) if len(dc) else {}
+        default_model = args.model or pick_default(models_summary) or llm.default_model_id()
+
+    print(f"\n=== Main tables (LLM systems use: {default_model}) ===")
+    df, gold_info = run_benchmark(use_llm=not args.no_llm, model_id=default_model)
     print("\n=== Held-out questions ===")
-    dh, gold_h = run_benchmark(use_llm=not args.no_llm, path=HELDOUT)
+    dh, gold_h = run_benchmark(use_llm=not args.no_llm, path=HELDOUT, model_id=default_model)
     pd.concat([df.assign(set="development"), dh.assign(set="held-out")]).to_csv(
         EVAL_DIR / "benchmark_results.csv", index=False)
     plot(df, EVAL_DIR / "benchmark_by_category.png")
-    summary = {"generated": time.strftime("%Y-%m-%d %H:%M"),
+
+    answers = {}
+    if not args.no_llm:
+        answer_models = [m.strip() for m in args.answers.split(",") if m.strip()]
+        answer_models += [default_model] if default_model and default_model not in answer_models else []
+        for mid in answer_models:
+            if llm.availability(mid)[0]:
+                print(f"\n=== Answer validation: {mid} ===")
+                answers[mid] = run_answer_validation(mid)
+        models_summary = summarise_models(dc, answers) if len(dc) else {}
+        if models_summary:
+            plot_models(models_summary, EVAL_DIR / "model_comparison.png")
+
+    summary = {"generated": time.strftime("%Y-%m-%d %H:%M"), "default_model": default_model,
                "benchmark": {"n_queries": int(df.id.nunique()), "systems": summarise(df), "gold": gold_info},
-               "heldout": {"n_queries": int(dh.id.nunique()), "systems": summarise(dh), "gold": gold_h}}
-    print("\n=== Answer validation ===")
-    summary["answer_validation"] = None if args.no_llm else run_answer_validation()
+               "heldout": {"n_queries": int(dh.id.nunique()), "systems": summarise(dh), "gold": gold_h},
+               "model_comparison": models_summary,
+               "answer_validation": answers.get(default_model)}
     print("\n=== Knowledge retrieval ===")
     summary["knowledge_retrieval"] = run_knowledge_eval()
     (EVAL_DIR / "summary.json").write_text(json.dumps(summary, indent=2, default=str))
     write_results_md(summary)
+    for mid, v in models_summary.items():
+        print(f"{v['label']:42s} dev hybrid={v.get('development_hybrid')}  held-out hybrid={v.get('held-out_hybrid')} "
+              f"single={v.get('held-out_single_shot')}  errors={v.get('held-out_provider_errors')}  "
+              f"latency={v.get('held-out_planner_latency_s')}s")
+    print("default model:", default_model)
     for name, s in summary["benchmark"]["systems"].items():
-        print(f"{name:45s} exact={s['result_accuracy']:5.1f}%  precision={s['constraint_precision_at_k']}  "
-              f"plan={s['plan_accuracy']}  latency={s['mean_latency_s']:.2f}s")
+        print(f"{name:45s} exact={s['result_accuracy']:5.1f}%  plan={s['plan_accuracy']}")
     print("held-out:")
     for name, s in summary["heldout"]["systems"].items():
         print(f"{name:45s} exact={s['result_accuracy']:5.1f}%  plan={s['plan_accuracy']}")
-    print(json.dumps({k: v for k, v in summary["knowledge_retrieval"].items() if k != "details"}, indent=2))
 
 
 if __name__ == "__main__":

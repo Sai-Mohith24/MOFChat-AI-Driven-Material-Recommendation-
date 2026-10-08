@@ -1,0 +1,26 @@
+<section id="limits" data-transition="fade" style="background:#EEF2F3;color:#14212B;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#1D6E8C;font-weight:600">Limitations and future work</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1">What MOFChat cannot do yet</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+<div style="background:#F7F6F2;border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:32px;font-weight:600">No adsorption data</h3>
+<p style="font-size:28px;line-height:1.4;color:#3E4C57">Application answers are geometric heuristics. Next: attach GCMC uptakes for hMOF/CoRE and train the same surrogates on them.</p>
+</div>
+<div style="background:#F7F6F2;border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:32px;font-weight:600">Recommendation only</h3>
+<p style="font-size:28px;line-height:1.4;color:#3E4C57">No structure generation, unlike ChatMOF's genetic algorithm.</p>
+</div>
+<div style="background:#F7F6F2;border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:32px;font-weight:600">Unusual phrasings</h3>
+<p style="font-size:28px;line-height:1.4;color:#3E4C57">Some held-out questions are still mis-planned; LoRA fine-tuning on plan examples would help.</p>
+</div>
+<div style="background:#F7F6F2;border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:12px">
+<h3 style="font-size:32px;font-weight:600">Free-text reasoning</h3>
+<p style="font-size:28px;line-height:1.4;color:#3E4C57">The validator checks IDs, numbers and comparisons, not a wrong formula in a sentence.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6B75">MOFChat · Team 09 · 15</p>
+<aside>Be direct about these. The dataset has geometry only, so we never claim adsorption performance; the hMOF folder has structures and energy grids but no uptake labels. Generation is out of scope. The held-out errors are listed in RESULTS.md with the system plan next to the gold plan. And the answer validator has a known blind spot: a small model can still write a wrong definition or formula in a sentence without numbers; the knowledge sources are shown so the user can check.</aside>
+</section>

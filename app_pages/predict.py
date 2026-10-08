@@ -1,15 +1,13 @@
 import json
 
-import altair as alt
 import pandas as pd
 import streamlit as st
 
-from mofchat.agent import _fmt
-from mofchat.config import COLUMN_BY_NAME, PROPERTY_MODEL_DIR
+from mofchat.config import PROPERTY_MODEL_DIR
 from mofchat.db import resolve_mof_id
 from mofchat.features import PROPERTY_TARGETS
 from mofchat.properties import available_targets, predict
-from mofchat.ui import label, materials
+from mofchat.ui import label, materials, render_prediction
 
 st.title("Predict & explain", anchor=False)
 st.caption("Surrogate models predict a property from cheaper geometric descriptors. XGBoost gives the main "
@@ -55,47 +53,7 @@ with st.form("predict_form", border=True):
         submitted = st.form_submit_button("Predict", icon=":material/play_arrow:")
 
 if inputs:
-    p = predict(target, inputs, actual=actual)
-    with st.container(horizontal=True):
-        f = lambda v: _fmt(target, v)  # noqa: E731
-        st.metric(f"Predicted {COLUMN_BY_NAME[target].label.lower()}", f"{f(p.value)} {p.unit}", border=True)
-        st.metric("90% prediction interval", f"{f(p.low)} – {f(p.high)} {p.unit}", border=True)
-        if p.ft_value is not None:
-            st.metric("FT-Transformer", f"{f(p.ft_value)} {p.unit}", border=True)
-        if p.actual is not None:
-            st.metric("Database value", f"{f(p.actual)} {p.unit}", f"error {f(p.value - p.actual)}",
-                      delta_color="off", border=True)
-    if p.hurdle_applied:
-        st.info(f"Pore limiting diameter {p.inputs['PLD']:.2f} Å is below the 3.31 Å probe diameter, so the "
-                "accessible surface area is exactly 0 (physics rule; holds for every MOF in the dataset).",
-                icon=":material/block:")
-    else:
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("**Why this value? (SHAP)**")
-            shap_df = pd.DataFrame({"feature": [label(k) for k in p.contributions],
-                                    "value": [f"{p.inputs[k]:.3g}" for k in p.contributions],
-                                    "shap": list(p.contributions.values())})
-            st.altair_chart(alt.Chart(shap_df).mark_bar().encode(
-                x=alt.X("shap:Q", title=f"Contribution ({p.unit})"),
-                y=alt.Y("feature:N", sort=alt.EncodingSortField("shap", op="max", order="descending"), title=None,
-                        axis=alt.Axis(labelLimit=320)),
-                color=alt.condition(alt.datum.shap > 0, alt.value("#4c78a8"), alt.value("#e45756")),
-                tooltip=["feature", "value", alt.Tooltip("shap:Q", format=".2f")]).properties(height=240))
-            st.caption(f"Average prediction (base value) {_fmt(target, p.base_value)} {p.unit} + contributions = "
-                       f"{_fmt(target, p.value)} {p.unit}.")
-        with c2:
-            if p.ft_attention:
-                st.markdown("**FT-Transformer attention ([CLS] → descriptor, last layer)**")
-                att = pd.DataFrame({"feature": [label(k) for k in p.ft_attention],
-                                    "attention": list(p.ft_attention.values())})
-                st.altair_chart(alt.Chart(att).mark_bar(color="#72b7b2").encode(
-                    x=alt.X("attention:Q", title="attention weight"),
-                    y=alt.Y("feature:N", sort="-x", title=None, axis=alt.Axis(labelLimit=320))).properties(height=240))
-                st.caption("Attention shows where the model looks, not causal importance; SHAP is the "
-                           "explanation to rely on.")
-    if p.imputed:
-        st.caption("Filled with database medians: " + ", ".join(p.imputed))
+    render_prediction(predict(target, inputs, actual=actual))
 
 metrics_path = PROPERTY_MODEL_DIR / "metrics.json"
 if metrics_path.exists():

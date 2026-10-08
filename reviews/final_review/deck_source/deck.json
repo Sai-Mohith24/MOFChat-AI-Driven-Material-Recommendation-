@@ -1,0 +1,25 @@
+{
+  "v": 4,
+  "attachments": {},
+  "createdOnFiles": {
+    "at": "2026-10-08T16:28:26.754Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "lists": "css",
+  "title": "MOFChat Final Review",
+  "cover": "cover",
+  "order": ["cover", "problem", "review1", "architecture", "data", "planner", "models", "benchmark", "comparison", "nsga", "surrogates", "similarity", "validator", "testing", "limits", "close"],
+  "sections": {
+    "s1": {"description": "The problem, the base paper and what we changed after review 1", "start": "cover"},
+    "s2": {"description": "How MOFChat works: data, planning, language models", "start": "architecture"},
+    "s3": {"description": "Measured results: benchmark and model comparison", "start": "benchmark"},
+    "s4": {"description": "Optimisation, surrogate models, similarity and knowledge", "start": "nsga"},
+    "s5": {"description": "Keeping the LLM honest, what testing found, limits and demo", "start": "validator"}
+  },
+  "faces": {
+    "source-serif-4": {"family": "Source Serif 4", "href": "https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400..700&display=swap"},
+    "ibm-plex-sans": {"family": "IBM Plex Sans", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"},
+    "ibm-plex-mono": {"family": "IBM Plex Mono", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap"}
+  }
+}

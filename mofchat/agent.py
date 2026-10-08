@@ -35,6 +35,7 @@ class AgentResponse:
     trace: list[str] = field(default_factory=list)
     timings: dict[str, float] = field(default_factory=dict)
     llm_used: bool = False
+    models_used: list[str] = field(default_factory=list)   # which LLMs actually answered (after fallback)
 
 
 @lru_cache(maxsize=1)
@@ -91,18 +92,21 @@ def why_text(row: pd.Series, plan: QueryPlan) -> str:
 
 class MOFChatAgent:
     def __init__(self, use_llm: bool = True, planner_mode: str = "hybrid", max_retries: int = 2,
-                 validate_answers: bool = True):
-        from .llm import status
-        self.llm_ok, self.llm_status = status() if use_llm else (False, "LLM disabled")
-        self.use_llm = use_llm and self.llm_ok
+                 validate_answers: bool = True, model_id: str | None = None):
+        from . import llm
+        self.model_id = (model_id or llm.default_model_id()) if use_llm else None
+        self.llm_ok, self.llm_status = llm.status(self.model_id) if use_llm else (False, "LLM disabled")
+        self.use_llm = use_llm and bool(llm.fallback_chain(self.model_id))
         self.planner_mode = planner_mode if self.use_llm else "rules"
         self.max_retries = max_retries
         self.validate_answers = validate_answers
         self.targets = available_targets() or ("Surface_Area",)
+        self.last_models: list[str] = []
 
     # ---------------------------------------------------------------- planning
     def plan(self, question: str) -> tuple[QueryPlan, list[str]]:
         trace: list[str] = []
+        self.last_models = []
         rp, r_err = validator.validate_plan(rules.parse(question), question, expand=False,
                                             predictable=self.targets)
         if self.planner_mode == "rules" or not self.use_llm:
@@ -110,20 +114,23 @@ class MOFChatAgent:
             validator.expand_application(rp, rp.notes)
             return rp, trace
 
-        from .llm import llm_plan
+        from . import llm
         feedback, lp = [], None
         for attempt in range(self.max_retries + 1):
             try:
-                obj, raw = llm_plan(question, feedback)
-            except Exception as e:  # Ollama went away mid-request
-                trace.append(f"LLM planner failed ({e}); using rule-based plan.")
+                obj, raw, used = llm.llm_plan(question, feedback, self.model_id)
+            except Exception as e:  # every model in the fallback chain failed (offline, rate limits)
+                trace.append(f"LLM planner failed ({str(e)[:300]}); using rule-based plan.")
                 break
+            if used != self.model_id:
+                trace.append(f"{self.model_id} unavailable; planned with fallback model {used}.")
+            self.last_models.append(used)
             if obj is None:
                 errs = ["Output was not a JSON object."]
             else:
                 obj["source"] = "llm"
                 cand, errs = validator.validate_plan(obj, question, expand=False, predictable=self.targets)
-            trace.append(f"LLM plan attempt {attempt + 1}: {raw[:400]}")
+            trace.append(f"LLM plan attempt {attempt + 1} ({used}): {raw[:400]}")
             if not errs:
                 lp = cand
                 break
@@ -222,6 +229,7 @@ class MOFChatAgent:
                                "and explaining MOF concepts. Try e.g. *\"MOFs with surface area > 4000 m²/g and "
                                "density < 0.5\"* or *\"best MOFs for CO2 capture\"*.")
                 resp.timings = {"plan": t1 - t0, "total": time.time() - t0}
+                resp.models_used = list(dict.fromkeys(self.last_models))
                 return resp
         else:
             res, preds = self.execute(plan)
@@ -253,6 +261,7 @@ class MOFChatAgent:
             resp.answer = template
         resp.timings = {"plan": round(t1 - t0, 3), "execute": round(t2 - t1, 3),
                         "answer": round(time.time() - t2, 3), "total": round(time.time() - t0, 3)}
+        resp.models_used = list(dict.fromkeys(self.last_models))
         return resp
 
     # -------------------------------------------------------------- templates
@@ -336,6 +345,10 @@ class MOFChatAgent:
                            "and each one misses at least one constraint - say this clearly.")
             elif res.kind == "rows" and p.constraints:
                 out.append("All listed MOFs satisfy every constraint.")
+            if res.kind == "similar" and p.mof_ids:
+                out.append(f"The first row, {p.mof_ids[0]}, is the MOF the user asked about (similarity 1 to itself, "
+                           f"shown for comparison); the other rows are its nearest neighbours. Do not list "
+                           f"{p.mof_ids[0]} as a similar MOF.")
         notes = p.notes + (res.notes if res else [])
         if notes:
             out.append("NOTES:\n- " + "\n- ".join(notes))
@@ -367,7 +380,7 @@ class MOFChatAgent:
         return "\n\n".join(out)
 
     def _llm_answer(self, r: AgentResponse, template: str) -> tuple[str, dict]:
-        from .llm import write_answer
+        from . import llm
         ctx = self._context(r)
         allowed = validator.allowed_numbers(r.table if r.table is not None else
                                             (r.result.rows if r.result is not None else None), r.plan)
@@ -375,6 +388,7 @@ class MOFChatAgent:
         if r.result is not None:
             allowed += [float(v) for v in (r.result.n_matches, r.result.value) if v is not None]
         for pr in r.predictions:
+            allowed += [0.90, 90.0, pr.base_value]                          # "90 % interval", SHAP base value
             allowed += [pr.value, pr.low, pr.high] + list(pr.contributions.values()) + list(pr.inputs.values())
             allowed += [pr.ft_value] if pr.ft_value is not None else []
             allowed += [pr.actual] if pr.actual is not None else []
@@ -386,22 +400,30 @@ class MOFChatAgent:
             allowed += [v for _, v, _, _ in validator._numbers(s.text)]
         allowed = [a for a in allowed if a is not None]
         rows_for_ids = r.table if r.table is not None else (r.result.rows if r.result is not None else None)
+        own = validator.query_numbers(r.question) + ([c.value for c in r.plan.constraints] if r.plan else [])
 
-        text = write_answer(ctx)
+        def check(t):
+            return validator.validate_answer(t, rows_for_ids, allowed, skip_values=own)
+
+        text, used = llm.write_answer(ctx, self.model_id)
+        self.last_models.append(used)
         if not self.validate_answers:
-            return text, validator.validate_answer(text, rows_for_ids, allowed) | {"attempts": 1, "enforced": False}
-        v = validator.validate_answer(text, rows_for_ids, allowed)
-        first = {k: v[k] for k in ("ok", "invalid_ids", "corrected_ids", "unverified_numbers")}
+            return text, check(text) | {"attempts": 1, "enforced": False}
+        v = check(text)
+        first = {k: v[k] for k in ("ok", "invalid_ids", "corrected_ids", "unverified_numbers", "false_claims")}
         attempts = 1
-        if v["invalid_ids"] or v["unverified_numbers"]:
+        if v["invalid_ids"] or v["unverified_numbers"] or v["false_claims"]:
             problems = []
             if v["invalid_ids"]:
                 problems.append("these MOF IDs are not in the verified results: " + ", ".join(v["invalid_ids"]))
             if v["unverified_numbers"]:
                 problems.append("these numbers do not appear in the verified data: " + ", ".join(v["unverified_numbers"]))
-            text = write_answer(ctx + "\n\nYOUR PREVIOUS ANSWER WAS REJECTED because " + "; ".join(problems)
-                                + ". Rewrite it using only the verified values.")
-            v = validator.validate_answer(text, rows_for_ids, allowed)
+            if v["false_claims"]:
+                problems.append("these comparisons contradict the verified data: " + "; ".join(v["false_claims"]))
+            text, used = llm.write_answer(ctx + "\n\nYOUR PREVIOUS ANSWER WAS REJECTED because " + "; ".join(problems)
+                                + ". Rewrite it using only the verified values.", self.model_id)
+            self.last_models.append(used)
+            v = check(text)
             attempts = 2
         final = v["text"]
         if v["corrected_ids"]:
@@ -410,5 +432,8 @@ class MOFChatAgent:
             final += ("\n\n⚠️ _Validator: could not verify " +
                       ", ".join(v["invalid_ids"] + v["unverified_numbers"]) +
                       " against the database - rely on the table below._")
+        if v["false_claims"]:
+            final += ("\n\n⚠️ _Validator: " + "; ".join(v["false_claims"]) +
+                      " - rely on the table below._")
         v["attempts"], v["enforced"], v["first_draft"] = attempts, True, first
         return final, v

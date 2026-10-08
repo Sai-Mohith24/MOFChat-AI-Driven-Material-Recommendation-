@@ -1,0 +1,21 @@
+<section id="problem" data-transition="fade" style="background:#F7F6F2;color:#14212B;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#1D6E8C;font-weight:600">Problem and base paper</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1">Choosing a MOF means searching 12,020 structures on several properties at once</h2>
+</div>
+<div style="display:flex;gap:64px">
+<div style="flex:1;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:30px;line-height:1.45;color:#3E4C57">ChatMOF (Kang &amp; Kim, <i>Nat. Commun.</i> 2024) showed that a GPT-4 agent can search, predict and generate MOFs from natural language.</p>
+<p style="font-size:30px;line-height:1.45;color:#3E4C57">Its own analysis lists the weaknesses we set out to fix.</p>
+</div>
+<div style="flex:1.3;display:flex;flex-direction:column;gap:0px">
+<p style="font-size:30px;padding:20px 0px;border-top:2px solid #1D6E8C">LLM-written code with logic errors</p>
+<p style="font-size:30px;padding:20px 0px;border-top:1px solid #C9D3D8">Token-limit failures on large tables (4 % of searches)</p>
+<p style="font-size:30px;padding:20px 0px;border-top:1px solid #C9D3D8">A proprietary, online LLM</p>
+<p style="font-size:30px;padding:20px 0px;border-top:1px solid #C9D3D8">A dedicated pretrained model per property</p>
+<p style="font-size:30px;padding:20px 0px;border-top:1px solid #C9D3D8;border-bottom:1px solid #C9D3D8">No validation of the generated answer</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6B75">MOFChat · Team 09 · 2</p>
+<aside>MOFs are crystalline porous materials built from metal nodes and organic linkers, candidates for carbon capture, gas storage, separations and catalysis. Picking one means filtering thousands of structures on pore size, surface area, density and so on, plus domain knowledge. ChatMOF is our base paper. Its own error analysis names these five weaknesses; each later slide shows how MOFChat addresses one of them.</aside>
+</section>

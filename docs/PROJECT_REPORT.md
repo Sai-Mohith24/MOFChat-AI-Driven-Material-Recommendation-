@@ -7,16 +7,16 @@ Amrutha T (24255) · Charan Tej Reddy Y (24259) · Poojitha D (24263) · Enku Sa
 
 Selecting a metal-organic framework (MOF) for a task such as CO2 capture or gas storage means searching thousands of structures on several properties at once. LLM agents such as ChatMOF make this conversational, but they generate code that can fail, exceed token limits or return unchecked answers.
 
-MOFChat is an offline assistant over the 12,020-MOF CoRE-MOF 2019 table:
+MOFChat is an assistant over the 12,020-MOF CoRE-MOF 2019 table that runs on free cloud language models or fully offline:
 
-- A local Llama 3 model produces a **structured query plan** rather than code.
+- A language model produces a **structured query plan** rather than code. Any of 14 models can be used: free Gemini, Groq and OpenRouter models, or local Llama 3 / Qwen through Ollama. Rate-limited models fall back automatically to the next one, and to a deterministic rule parser if none is reachable.
 - A **validator** checks and repairs the plan: units, physical ranges, grounding of numbers and IDs.
 - Parameterised **SQL** retrieves exact matches, and **NSGA-II** ranks candidates on several objectives.
 - **Surrogate models** (XGBoost, Gaussian process, FT-Transformer) predict properties with **SHAP** explanations and conformal intervals.
 - A self-supervised **FT-Transformer** powers similarity search.
 - An **answer validator** rejects MOF IDs and numbers that are not in the retrieved data.
 
-On a 64-question labelled development benchmark the final hybrid system answers 100 % of questions exactly; the rule parser was tuned on these questions. On 20 held-out phrasings written afterwards it reaches 80 %, with 90.9 % constraint precision. Our review-1 design scores 9.4 % and 5 % on the same two sets. The surface-area surrogate reaches R² = 0.982 (MAE 90 m²/g), and its 90 % conformal interval covers 90.5 % of test MOFs.
+On a 64-question labelled development benchmark the final system answers 100 % of questions exactly; the rule parser was tuned on these questions. On 20 held-out phrasings written afterwards it also answers all 20 with the default free model (Gemini 3.1 Flash-Lite), and 80 % fully offline with a local Llama 3 8B, where the validator and hybrid planner add 15 points. Our review-1 design scores 9.4 % and 5 % on the same two sets. Six free models were compared; the four cloud models that completed the run are within one question of each other. The surface-area surrogate reaches R² = 0.982 (MAE 90 m²/g), and its 90 % conformal interval covers 90.5 % of test MOFs.
 
 ## 1. Introduction and problem statement
 
@@ -33,7 +33,7 @@ The base paper, **ChatMOF** (Kang & Kim, *Nat. Commun.* 15, 4705, 2024), showed 
 - generated results with no further validation.
 
 **Objectives:**
-1. Answer natural-language MOF questions with exact, verifiable results from the full 12,020-MOF table, offline.
+1. Answer natural-language MOF questions with exact, verifiable results from the full 12,020-MOF table, using free or local models only.
 2. Make LLM planning safe and measurable: validation, self-correction and fallback.
 3. Rank candidates on multiple objectives (NSGA-II).
 4. Predict properties with uncertainty and explanations (surrogates + SHAP).
@@ -74,7 +74,7 @@ The output is a SQLite database (`data/coremof.db`) with `materials` (15 columns
 
 ```mermaid
 graph TD
-    Q[User question] --> P{{Planner: Llama 3 JSON plan + rule parser}}
+    Q[User question] --> P{{Planner: LLM JSON plan + rule parser}}
     P --> V[Validator: columns, units, ranges, grounding]
     V -->|errors: retry up to 2x| P
     V --> X{Intent}
@@ -84,17 +84,17 @@ graph TD
     X -->|similar| E[FT-Transformer embeddings + FAISS]
     X -->|predict| M[XGBoost + conformal interval + SHAP; FT-Transformer]
     X -->|knowledge| K[RAG: curated notes + ChatMOF paper]
-    N --> A[Llama 3 answer writer]
+    N --> A[LLM answer writer]
     R --> A
     E --> A
     M --> A
     K --> A
     A --> AV[Answer validator: IDs and numbers must match results]
-    AV --> U[Answer + verified table + trace]
+    AV --> U[Answer + verified table / prediction card + trace]
 ```
 
 ### 4.1 Planner
-Llama 3 (8B, via Ollama, temperature 0, JSON mode) receives a schema description, rules and nine few-shot examples. It outputs a plan with these fields:
+The planner LLM (temperature 0, JSON mode) receives a schema description, rules and nine few-shot examples. It outputs a plan with these fields:
 - intent;
 - numeric constraints and objectives;
 - metals and open-metal-site flag;
@@ -105,6 +105,17 @@ Llama 3 (8B, via Ollama, temperature 0, JSON mode) receives a schema description
 
 A deterministic **rule parser** (regular expressions over comparators, ranges, percentages, superlatives, metals, gases and applications) produces the same structure. It is used as the fallback and as a reproducible baseline. The **hybrid** planner adds to the LLM plan the facts the rule parser is certain about: explicit numeric constraints, metals, explicit limits, and applications named by keyword.
 
+**Language models** (`mofchat/llm.py`). The LLM is an interchangeable component behind a registry of 14 models, each reporting whether it is usable right now (key present, package installed, server running):
+
+| Provider | Models | Free-tier limit |
+|---|---|---|
+| Ollama (local, offline) | Llama 3 8B, Llama 3.1 8B, Qwen 2.5 7B, Nemotron Mini 4B | none (laptop CPU) |
+| Google Gemini | 3.5 Flash, 3.8 Flash, 3.1 Flash-Lite, Flash-Lite latest | about 10–15 requests/min |
+| Groq | GPT-OSS 120B, GPT-OSS 20B, Qwen 3.8 27B | 8,000 tokens/min, 1,000 requests/day per model |
+| OpenRouter | Nemotron 3 Super 120B, Nemotron 3 Ultra 550B, Gemma 4 31B (`:free`) | about 50 requests/day |
+
+Every call goes through one function that throttles each model to its free-tier budget and, on a rate limit or outage (429/503), moves to the next model in the fallback chain. If every model fails, the rule parser plans and a template writes the answer, so a question is always answered. Section 5.2 compares the models.
+
 ### 4.2 Validator (`mofchat/validator.py`)
 - Resolves column aliases from a single registry (`config.py`).
 - Normalises operators, directions and percentages.
@@ -114,6 +125,7 @@ A deterministic **rule parser** (regular expressions over comparators, ranges, p
 - Merges duplicate bounds and flags contradictions.
 - Repairs superlatives written as constraints.
 - Expands application presets into explicit, explained constraints and objectives.
+- For application questions, drops ranking objectives the question does not mention, so the preset (and its explanation) decides the ranking. GPT-OSS 20B, for example, ranked "best MOFs for CO2 capture" by gravimetric surface area, silently replacing the CO2 preset.
 
 Errors go back to the LLM for up to two corrections, after which the rule plan is used.
 
@@ -148,30 +160,31 @@ These are explicitly heuristics: the dataset has no adsorption data.
 - **Explanations and intervals:** SHAP (TreeExplainer) and split-conformal 90 % intervals.
 
 ### 4.7 Knowledge retrieval (`setup_vectorstore.py`)
-- **Corpus:** five curated notes with references (dataset definitions and quality facts, kinetic diameters and sieving, application heuristics, MOF basics, MOFChat methods), plus the ChatMOF paper (13 pages, reference list skipped). That gives 102 chunks.
+- **Corpus:** five curated notes with references (dataset definitions and quality facts, kinetic diameters and sieving, application heuristics, MOF basics, MOFChat methods), plus the ChatMOF paper (13 pages, reference list skipped). That gives 104 chunks.
 - **Retrieval:** all-MiniLM-L6-v2 normalised embeddings and FAISS inner product. Questions whose best match scores below 0.30 cosine are treated as off-topic.
 
 ### 4.8 Answer generation and validation
-Llama 3 writes a short answer from the verified rows (at most 10), a percentile-based "why" per MOF, notes and cited snippets.
+The LLM writes a short answer from the verified rows (at most 10), a percentile-based "why" per MOF, notes and cited snippets.
 
 The validator then:
-1. extracts every ID-like token and number;
+1. extracts every ID-like token and number (including thousands written with narrow spaces, "8 318", as GPT-OSS does);
 2. corrects IDs within edit distance 2 of a result (e.g. ACOCLUS → ACOCUS);
 3. flags unknown IDs and numbers not traceable to the data (within rounding);
-4. regenerates once with the exact problems listed;
-5. flags anything still unverified.
+4. checks **comparison claims** about named MOFs: in "the remaining three (A, B, C) offer surface areas ≥ 6000 m²/g" each number exists somewhere in the results, so step 3 passes, but the claim is false if B has 4,564 m²/g. The column is found from the unit or the nearest property name, the MOFs from the IDs in the sentence (or "these", "all five"), and each one is checked against the database. Claims about Pareto fronts ("on the first front") are checked against the NSGA-II ranks;
+5. regenerates once with the exact problems listed;
+6. flags anything still unverified.
 
-The verified table is always displayed.
+The verified table, or for predictions a card with the value, interval and SHAP drivers, is always displayed next to the text.
 
 ### 4.9 Application (Streamlit)
 Five pages:
-- **Chat:** answer, verified table, "why it fits", Pareto plot, SHAP, sources, plan/SQL/validator trace.
+- **Chat:** answer, verified table or prediction card, "why it fits", Pareto plot, SHAP, sources, plan/SQL/validator trace, and which model answered. The sidebar picks the language model (or none) and the planner mode.
 - **Explore & optimise:** filters and two-objective NSGA-II with Pareto plot.
 - **Predict & explain:** prediction, interval, SHAP and FT attention.
 - **Evaluation:** all metrics and figures.
 - **About.**
 
-The app works without Ollama, falling back to rule-based planning and template answers.
+The app works without any language model, falling back to rule-based planning and template answers.
 
 ## 5. Experiments and results
 
@@ -182,27 +195,60 @@ All numbers are generated by the scripts. Full tables and figures are in [RESULT
 - **Held-out set:** 20 new phrasings written after the rule parser had been tuned, never used for tuning.
 - **Gold answers:** gold plans executed by the same executor, which is unit-tested against pandas.
 
+The LLM rows use **Gemini 3.1 Flash-Lite**, the best model in the comparison of section 5.2; the local Llama 3 rows are shown for contrast.
+
 | System | Development set (64) exact | Held-out set (20) exact | Held-out constraint precision@k |
 |---|---:|---:|---:|
 | Review-1 two-tower (shipped) | 9.4 % | 5.0 % | 41.8 % |
 | Rules planner (no LLM) | 100.0 % | 80.0 % | 72.7 % |
-| LLM planner, single shot (no validator) | 85.9 % | 65.0 % | 72.7 % |
-| LLM planner + validator | 93.8 % | 70.0 % | 89.1 % |
-| Hybrid (default) | 100.0 % | 80.0 % | 90.9 % |
+| Gemini 3.1 Flash-Lite, single shot (no validator) | 100.0 % | 100.0 % | 100.0 % |
+| Gemini 3.1 Flash-Lite + validator | 100.0 % | 100.0 % | 100.0 % |
+| **Hybrid with Gemini 3.1 Flash-Lite (default)** | **100.0 %** | **100.0 %** | **100.0 %** |
+| Llama 3 8B (local), single shot | 85.9 % | 65.0 % | - |
+| Llama 3 8B + validator | 93.8 % | 70.0 % | - |
+| Hybrid with Llama 3 8B | 100.0 % | 80.0 % | - |
 
 How to read this:
-- **Development set.** The rule parser was written while looking at these questions, so its 100 % (and the hybrid's) is optimistic.
-- **Held-out set.** This is the honest estimate of generalisation. The default hybrid system answers 80.0 % of new phrasings exactly, and 90.9 % of the MOFs it returns satisfy the constraints. The review-1 design manages 5.0 % and 41.8 %.
-- **Validator effect.** The validator (repair, grounding, self-correction, fallback) raises single-shot Llama 3 from 85.9 % to 93.8 % on the development set and from 65.0 % to 70.0 % on held-out questions. Merging in the rule parser's explicit facts gives the hybrid's 100.0 % / 80.0 %.
-- **Remaining held-out errors.** Llama 3 maps "natural gas" storage and an H2/CH4 sieving question to the hydrogen-storage preset. One question gets an extra objective. "Is there any MOF with density above 8?" is answered with a count (0), which is arguably correct but is scored as wrong because it differs from the gold plan.
+- **Development set.** The rule parser was written while looking at these questions, so its 100 % is optimistic; the held-out set is the honest estimate.
+- **Held-out set.** With the default model the system answers all 20 new phrasings exactly; the review-1 design manages 5 %, and the rule parser alone 80 %. Twenty questions is a small set: one question is 5 points.
+- **Where the safety layers matter.** For a strong model they change nothing (100 → 100 → 100 %) and cost under 0.01 s. For the small local model they are what makes it usable: Llama 3 rises from 65 % alone to 70 % with the validator and 80 % with the hybrid merge on held-out questions (85.9 → 93.8 → 100 % on the development set). The validator is therefore the reason MOFChat still works offline.
+- **Remaining held-out errors (Llama 3).** It maps "natural gas" storage and an H2/CH4 sieving question to the hydrogen-storage preset, adds an extra objective to one question, and answers "Is there any MOF with density above 8 g/cm³?" with a count (0) instead of a search.
 - **Context.** ChatMOF reports 96.9 % on its own search questions with GPT-4; the question sets differ.
 
-### 5.2 Answer validation
-Llama 3 wrote 16 full answers (search, multi-objective, application, count, lookup and similarity questions). After the validator was finalised, 0 of the 16 first drafts contained an unverifiable MOF ID or number, and no answer needed regeneration. The mean time per full answer was 5.8 s on a laptop.
+### 5.2 Which free language model? (model comparison)
+Each model planned both question sets on its own, with fallback switched off so every score belongs to one model. OpenRouter's free tier allows about 50 requests a day, so Nemotron was tested on the held-out set only.
+
+| Model | Held-out: LLM alone | Held-out: hybrid | Development: hybrid | Median time per planning call | Provider errors |
+|---|---:|---:|---:|---:|---:|
+| **Gemini 3.1 Flash-Lite** (default) | 100 % | 100 % | 100 % | 1.5 s (10.6 s under load) | 13 of 84 |
+| GPT-OSS 120B (Groq) | 95 % | 95 % | 100 % | 2.4–4.7 s | 0 |
+| Qwen 3.8 27B (Groq) | 95 % | 95 % | 100 % | 20 s | 0 |
+| Nemotron 3 Super 120B (OpenRouter) | 95 % | 95 % | - | 2.0 s | 0 |
+| Llama 3 8B (local, offline) | 65 % | 80 % | 100 % | 1.5 s | 0 |
+| Gemini 3.5 Flash | - | - | - | - | 64 of 84 (daily quota used up) |
+
+- **The four cloud models are effectively tied.** GPT-OSS 120B, Qwen 3.8 and Nemotron each miss only the density-above-8 question, which they answer with a count of 0, arguably correct. Flash-Lite plans that one as a search, as the gold plan does.
+- **Reliability and speed differ more than accuracy.** Flash-Lite's 13 provider errors and slow development run came from Google's free tier being overloaded at the time (1.5 s per call later). Qwen 3.8 is a reasoning model and spends Groq's 8,000-tokens-per-minute budget quickly, so its median call takes 20 s.
+- **Gemini 3.5 Flash could not be compared.** Its free daily quota ran out during the run (429 RESOURCE_EXHAUSTED), so 64 of 84 calls failed and its scores would measure the rule-parser fallback. It is reported as missing, not as a score.
+- **Choice.** The app's default order is Gemini 3.1 Flash-Lite (best held-out score), then GPT-OSS 120B (no provider errors, a different provider), Qwen 3.8, and local Llama 3. A rate-limited model falls back to the next one automatically.
+
+### 5.3 Answer validation
+Each model wrote full answers to the same 16 questions (search, multi-objective, application, count, lookup and similarity). The validator checked every first draft, requested one rewrite when needed, and flagged anything still wrong.
+
+| Model | First drafts with a problem | Rewritten | Still flagged | LLM call failed | Seconds per answer |
+|---|---:|---:|---:|---:|---:|
+| **Gemini 3.1 Flash-Lite** (default) | 0 of 16 | 0 | 0 | 0 | 9.9 |
+| Llama 3 8B (local) | 2 of 16 | 1 | 0 | 0 | 9.3 |
+| GPT-OSS 120B (Groq) | 2 of 16 | 2 | 1 | 0 | 30.2 |
+| Qwen 3.8 27B (Groq) | 0 of 16 | 0 | 0 | 7 | 26.4 |
+
+- **What was caught.** Llama 3 invented three numbers in one draft (two densities and a "90 %") and garbled an ID (OFEUN06 → OFERUN06, corrected automatically). GPT-OSS 120B used an unsupported number in one draft; its rewrite then claimed two MOFs were on "Pareto front 1" when the NSGA-II ranks put them on front 2. The new claim check flagged it, so that answer is shown with a warning above the verified table. In an earlier run the same false Pareto claim appeared in a first draft.
+- **Failures.** Seven of Qwen 3.8's answer calls failed at Groq's free-tier limits (a reasoning model uses many tokens); a template answer was shown instead, so the user still got the verified result. The long times for the Groq models include waiting for the tokens-per-minute budget.
+- **Default model.** Gemini 3.1 Flash-Lite produced no draft that needed correction.
 
 During development the validator's own false positives were found and fixed: percentages taken from the "why" column, plural words such as NOTES, and comma-formatted numbers such as 12,020. The garbled-ID failure observed with the review-1 SQL prototype (ACOCLUS for ACOCUS) is reproduced in a unit test, and the validator corrects it automatically.
 
-### 5.3 Property prediction (held-out 10 % test split)
+### 5.4 Property prediction (held-out 10 % test split)
 
 | Target | Model | MAE | RMSE | R² |
 |---|---|---:|---:|---:|
@@ -223,29 +269,32 @@ During development the validator's own false positives were found and fixed: per
 - SHAP: pore volume and void fraction dominate the surface-area predictions, and density dominates void fraction, which is physically sensible.
 - The FT-Transformer ties XGBoost on surface area, consistent with Grinsztajn et al.
 
-### 5.4 Embedding similarity
+### 5.5 Embedding similarity
 - FT-Transformer neighbours differ from the query by 0.077 σ per descriptor, against 0.068 σ for direct k-NN on the descriptors (an upper bound on this metric) and 0.95 σ for random MOFs.
 - They share the query's primary metal more often than k-NN neighbours (27.8 % vs 22.8 %; random 8 %), because metal and open-metal-site are input tokens.
 - Overlap with the k-NN neighbour lists is 62 %.
 
-### 5.5 Knowledge retrieval
+### 5.6 Knowledge retrieval
 On 12 in-domain questions with a known source, hit@1 is 75 % and hit@3 is 83 %. All 5 off-topic questions are rejected.
 
 ## 6. Discussion
 
 - **Why the review-1 retrieval failed.** It searched an FT-autoencoder index with a Sentence-BERT question vector. The vectors had the same dimension but no shared training, so retrieval ignored the question (the "chocolate cake" test). The general lesson: a two-tower model needs paired training data, and constraint satisfaction over numbers is a database problem, not a similarity problem.
-- **LLM vs rules.** The rule parser is fast and exact on phrasings it knows, but brittle on new ones ("tops 5500", "lighter than 0.4"). The LLM generalises better but makes systematic schema errors, such as superlatives as constraints or confusing methane with hydrogen. Validation, self-correction and the hybrid merge combine their strengths, and the single-shot vs validated vs hybrid rows quantify each step.
+- **LLM vs rules.** The rule parser is fast and exact on phrasings it knows, but brittle on new ones ("tops 5500", "lighter than 0.4"). A small LLM generalises better but makes systematic schema errors, such as superlatives as constraints or confusing methane with hydrogen. Validation, self-correction and the hybrid merge combine their strengths; the single-shot vs validated vs hybrid rows quantify each step.
+- **Small local model vs free cloud models.** A free cloud model (Gemini 3.1 Flash-Lite, GPT-OSS 120B, Qwen 3.8, Nemotron) plans almost every question correctly on its own, so the benchmark no longer separates them; their real differences are free-tier reliability and speed. The safety layers earn their place with the local 8B model, where they add 15 points on held-out questions, and as insurance against a cloud model's off days.
+- **Testing the finished app found what the benchmark could not.** The benchmark scores plans, not the written text, so four bugs only appeared when we used the app with GPT-OSS 20B: a false "≥ 6000 m²/g" claim that passed the number check, application presets silently replaced by the LLM's own objectives, a prediction the model refused to state after a validator false positive on "90 %", and thousands written with narrow spaces ("8 318") read as two numbers. Each is fixed and has a unit test built from the real output; the evaluation was re-run afterwards.
 - **Deep learning vs trees.** On about 8,000 accessible MOFs with 6 features, XGBoost and the FT-Transformer are statistically tied. XGBoost trains 400× faster (0.25 s vs 112 s) and gives exact TreeSHAP explanations, so it is the production model and the FT-Transformer a second opinion.
 
 ## 7. Limitations and future work
 - No gas-uptake or selectivity labels locally. Attaching GCMC data for CoRE/hMOF MOFs would let the same surrogate pipeline predict uptakes directly; the hMOF folder already holds the structures and energy grids.
 - No structure generation.
 - Application presets are heuristics.
-- Llama 3 8B still mis-plans some held-out phrasings; a larger model or LoRA fine-tuning on plan examples would help.
+- The local Llama 3 8B still mis-plans some held-out phrasings (80 % with the hybrid); LoRA fine-tuning on plan examples would help the offline mode. Free cloud tiers have daily quotas and overload periods, which the fallback chain absorbs but cannot remove.
+- The answer validator checks MOF IDs, numbers and comparison claims, not free-text reasoning: a small model can still write a wrong formula or definition in a sentence without numbers. The knowledge sources are shown so the user can check.
 - Similarity search could add structure-based embeddings (e.g. MOFTransformer) for chemistry-aware neighbours.
 
 ## 8. Conclusion
-MOFChat turns the ChatMOF idea into an offline, validated and measurable system:
+MOFChat turns the ChatMOF idea into a validated and measurable system that runs on free cloud models or fully offline:
 - exact answers over all 12,020 MOFs;
 - multi-objective ranking with NSGA-II;
 - calibrated, explained property predictions;

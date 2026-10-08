@@ -1,7 +1,7 @@
 """
 Backward-compatible entry point.
 
-The review-1 scripts (e.g. 1st_Review_Data-driven/08_streamlit_dashboard.py) import
+The review-1 scripts (e.g. reviews/1st_review/08_streamlit_dashboard.py) import
 `MOFHybridAgent` from here and call `answer_query()`. The implementation now lives in
 the `mofchat` package (planner -> validator -> SQL/NSGA-II -> answer validator).
 """

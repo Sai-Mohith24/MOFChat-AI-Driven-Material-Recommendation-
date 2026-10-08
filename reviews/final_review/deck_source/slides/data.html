@@ -1,0 +1,18 @@
+<section id="data" data-transition="fade" style="background:#F7F6F2;color:#14212B;font-family:'IBM Plex Sans', Arial, sans-serif;padding:112px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;letter-spacing:3px;text-transform:uppercase;color:#1D6E8C;font-weight:600">Data</p>
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:600;line-height:1.1">CoRE-MOF 2019: 12,020 MOFs, 17 geometric descriptors</h2>
+</div>
+<table style="font-size:28px;color:#14212B">
+<tr><th style="width:40%;text-align:left">Check</th><th style="width:35%;text-align:left">Finding</th><th style="width:25%;text-align:left">Action</th></tr>
+<tr><td>Zero surface area (3,252 MOFs, 27 %)</td><td>all have PLD below the 3.31 Å probe</td><td>exact physics rule</td></tr>
+<tr style="background:#EEF2F3"><td>Two pairs of columns</td><td>exact duplicates</td><td>dropped</td></tr>
+<tr><td>Pore volume vs void fraction / density</td><td>equal (max error 6×10⁻⁶)</td><td>documented as derived</td></tr>
+<tr style="background:#EEF2F3"><td>Density unit</td><td>header cm³/g, values g/cm³</td><td>label corrected</td></tr>
+<tr><td>Multi-metal MOFs (2,087)</td><td>comma-separated metals</td><td>separate metal table</td></tr>
+<tr style="background:#EEF2F3"><td>Missing values, duplicate rows</td><td>none</td><td>none</td></tr>
+</table>
+<p style="font-size:28px;line-height:1.4;color:#3E4C57">The table holds geometry only, with no gas-uptake labels, so "CO2 capture" answers are screening heuristics, and we say so in every such answer.</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5F6B75">MOFChat · Team 09 · 5</p>
+<aside>setup_db.py loads the spreadsheet, renames columns to a clean schema and asserts each of these facts, so they are tested, not just observed. The zero-surface-area MOFs are real, not missing data: the descriptors were computed with a 3.31 angstrom nitrogen probe, and a pore limiting diameter below that means no accessible surface. The result is a SQLite database with a materials table, a normalised metal table and column documentation.</aside>
+</section>

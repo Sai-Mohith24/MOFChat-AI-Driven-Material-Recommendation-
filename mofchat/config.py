@@ -28,13 +28,12 @@ PROPERTY_MODEL_DIR = ARTIFACTS_DIR / "property_models"  # surrogate models + SHA
 KNOWLEDGE_INDEX_DIR = ARTIFACTS_DIR / "knowledge_index" # literature / domain RAG index
 EVAL_DIR = ARTIFACTS_DIR / "eval"                       # benchmark + metrics + figures
 
-PAPERS_DIRS = [KNOWLEDGE_DIR / "papers", PROJECT_ROOT.parent]  # PDFs to ingest (ChatMOF.pdf lives in the parent folder)
+PAPERS_DIRS = [KNOWLEDGE_DIR / "papers"]  # PDFs to ingest (ChatMOF.pdf)
 
 # --------------------------------------------------------------------------
 # Models
 # --------------------------------------------------------------------------
-LLM_MODEL = os.environ.get("MOFCHAT_LLM", "llama3")
-OLLAMA_URL = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+# Language models: see mofchat/llm.py (model registry; keys and MOFCHAT_MODEL in .env)
 TEXT_EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 RANDOM_SEED = 42
 

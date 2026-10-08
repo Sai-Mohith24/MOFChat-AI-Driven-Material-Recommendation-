@@ -1,5 +1,6 @@
 {
-  "generated": "2026-10-08 11:12",
+  "generated": "2026-10-08 23:17",
+  "default_model": "gemini-3.1-flash-lite",
   "benchmark": {
     "n_queries": 64,
     "systems": {
@@ -7,7 +8,7 @@
         "result_accuracy": 9.4,
         "constraint_precision_at_k": 30.3,
         "plan_accuracy": null,
-        "mean_latency_s": 0.008,
+        "mean_latency_s": 0.006,
         "by_category": {
           "single constraint": 12.5,
           "multiple constraints": 10.0,
@@ -25,7 +26,7 @@
         "result_accuracy": 100.0,
         "constraint_precision_at_k": 100.0,
         "plan_accuracy": 100.0,
-        "mean_latency_s": 0.006,
+        "mean_latency_s": 0.005,
         "by_category": {
           "single constraint": 100.0,
           "multiple constraints": 100.0,
@@ -40,37 +41,37 @@
         }
       },
       "LLM planner, single shot (no validator)": {
-        "result_accuracy": 85.9,
+        "result_accuracy": 100.0,
         "constraint_precision_at_k": 100.0,
-        "plan_accuracy": 85.9,
-        "mean_latency_s": 1.601,
-        "by_category": {
-          "single constraint": 100.0,
-          "multiple constraints": 100.0,
-          "metal / open metal site": 100.0,
-          "superlative": 87.5,
-          "multi-objective": 40.0,
-          "application": 83.3,
-          "count / average": 66.7,
-          "lookup / similar": 66.7,
-          "impossible request": 100.0,
-          "knowledge / off-topic": 100.0
-        }
-      },
-      "LLM planner + validator": {
-        "result_accuracy": 93.8,
-        "constraint_precision_at_k": 100.0,
-        "plan_accuracy": 90.6,
-        "mean_latency_s": 0.225,
+        "plan_accuracy": 100.0,
+        "mean_latency_s": 0.003,
         "by_category": {
           "single constraint": 100.0,
           "multiple constraints": 100.0,
           "metal / open metal site": 100.0,
           "superlative": 100.0,
-          "multi-objective": 80.0,
-          "application": 83.3,
+          "multi-objective": 100.0,
+          "application": 100.0,
           "count / average": 100.0,
-          "lookup / similar": 66.7,
+          "lookup / similar": 100.0,
+          "impossible request": 100.0,
+          "knowledge / off-topic": 100.0
+        }
+      },
+      "LLM planner + validator": {
+        "result_accuracy": 100.0,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 100.0,
+        "mean_latency_s": 0.004,
+        "by_category": {
+          "single constraint": 100.0,
+          "multiple constraints": 100.0,
+          "metal / open metal site": 100.0,
+          "superlative": 100.0,
+          "multi-objective": 100.0,
+          "application": 100.0,
+          "count / average": 100.0,
+          "lookup / similar": 100.0,
           "impossible request": 100.0,
           "knowledge / off-topic": 100.0
         }
@@ -78,8 +79,8 @@
       "Hybrid (default)": {
         "result_accuracy": 100.0,
         "constraint_precision_at_k": 100.0,
-        "plan_accuracy": 96.9,
-        "mean_latency_s": 0.007,
+        "plan_accuracy": 100.0,
+        "mean_latency_s": 0.004,
         "by_category": {
           "single constraint": 100.0,
           "multiple constraints": 100.0,
@@ -360,7 +361,7 @@
         "result_accuracy": 5.0,
         "constraint_precision_at_k": 41.8,
         "plan_accuracy": null,
-        "mean_latency_s": 0.007,
+        "mean_latency_s": 0.005,
         "by_category": {
           "held-out": 5.0
         }
@@ -369,36 +370,36 @@
         "result_accuracy": 80.0,
         "constraint_precision_at_k": 72.7,
         "plan_accuracy": 80.0,
-        "mean_latency_s": 0.005,
+        "mean_latency_s": 0.004,
         "by_category": {
           "held-out": 80.0
         }
       },
       "LLM planner, single shot (no validator)": {
-        "result_accuracy": 65.0,
-        "constraint_precision_at_k": 72.7,
-        "plan_accuracy": 65.0,
-        "mean_latency_s": 1.511,
+        "result_accuracy": 100.0,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 100.0,
+        "mean_latency_s": 0.002,
         "by_category": {
-          "held-out": 65.0
+          "held-out": 100.0
         }
       },
       "LLM planner + validator": {
-        "result_accuracy": 70.0,
-        "constraint_precision_at_k": 89.1,
-        "plan_accuracy": 70.0,
-        "mean_latency_s": 0.182,
+        "result_accuracy": 100.0,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 100.0,
+        "mean_latency_s": 0.004,
         "by_category": {
-          "held-out": 70.0
+          "held-out": 100.0
         }
       },
       "Hybrid (default)": {
-        "result_accuracy": 80.0,
-        "constraint_precision_at_k": 90.9,
-        "plan_accuracy": 80.0,
-        "mean_latency_s": 0.009,
+        "result_accuracy": 100.0,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 100.0,
+        "mean_latency_s": 0.004,
         "by_category": {
-          "held-out": 80.0
+          "held-out": 100.0
         }
       }
     },
@@ -485,188 +486,417 @@
       }
     }
   },
+  "model_comparison": {
+    "llama3-local": {
+      "label": "Llama 3 8B (local)",
+      "provider": "Ollama (local, offline)",
+      "development_single_shot": 85.9,
+      "development_validated": 93.8,
+      "development_hybrid": 100.0,
+      "development_planner_latency_s": 1.45,
+      "development_provider_errors": 0,
+      "held-out_single_shot": 65.0,
+      "held-out_validated": 70.0,
+      "held-out_hybrid": 80.0,
+      "held-out_planner_latency_s": 1.46,
+      "held-out_provider_errors": 0,
+      "answers": {
+        "n_answers": 16,
+        "answer_llm_failures": 0,
+        "first_drafts_with_unverifiable_content": 2,
+        "first_drafts_with_false_claims": 0,
+        "answers_regenerated": 1,
+        "final_answers_with_flagged_content": 0,
+        "mean_seconds_per_answer": 9.3
+      }
+    },
+    "gpt-oss-120b": {
+      "label": "GPT-OSS 120B (Groq)",
+      "provider": "Groq (free tier)",
+      "development_single_shot": 100.0,
+      "development_validated": 100.0,
+      "development_hybrid": 100.0,
+      "development_planner_latency_s": 2.4,
+      "development_provider_errors": 0,
+      "held-out_single_shot": 95.0,
+      "held-out_validated": 95.0,
+      "held-out_hybrid": 95.0,
+      "held-out_planner_latency_s": 4.69,
+      "held-out_provider_errors": 0,
+      "answers": {
+        "n_answers": 16,
+        "answer_llm_failures": 0,
+        "first_drafts_with_unverifiable_content": 2,
+        "first_drafts_with_false_claims": 0,
+        "answers_regenerated": 2,
+        "final_answers_with_flagged_content": 1,
+        "mean_seconds_per_answer": 30.2
+      }
+    },
+    "qwen3.8-27b": {
+      "label": "Qwen 3.8 27B (Groq)",
+      "provider": "Groq (free tier)",
+      "development_single_shot": 100.0,
+      "development_validated": 100.0,
+      "development_hybrid": 100.0,
+      "development_planner_latency_s": 20.04,
+      "development_provider_errors": 0,
+      "held-out_single_shot": 95.0,
+      "held-out_validated": 95.0,
+      "held-out_hybrid": 95.0,
+      "held-out_planner_latency_s": 20.26,
+      "held-out_provider_errors": 0,
+      "answers": {
+        "n_answers": 16,
+        "answer_llm_failures": 7,
+        "first_drafts_with_unverifiable_content": 0,
+        "first_drafts_with_false_claims": 0,
+        "answers_regenerated": 0,
+        "final_answers_with_flagged_content": 0,
+        "mean_seconds_per_answer": 26.4
+      }
+    },
+    "gemini-3.5-flash": {
+      "label": "Gemini 3.5 Flash",
+      "provider": "Google Gemini (free tier)",
+      "development_quota_exhausted": true,
+      "development_single_shot": null,
+      "development_validated": null,
+      "development_hybrid": null,
+      "development_planner_latency_s": null,
+      "development_provider_errors": 44,
+      "held-out_quota_exhausted": true,
+      "held-out_single_shot": null,
+      "held-out_validated": null,
+      "held-out_hybrid": null,
+      "held-out_planner_latency_s": null,
+      "held-out_provider_errors": 20,
+      "answers": {
+        "n_answers": 16,
+        "first_drafts_with_unverifiable_content": 0,
+        "first_drafts_with_false_claims": 0,
+        "answers_regenerated": 0,
+        "final_answers_with_flagged_content": 0,
+        "mean_seconds_per_answer": 7.7
+      }
+    },
+    "gemini-3.1-flash-lite": {
+      "label": "Gemini 3.1 Flash-Lite",
+      "provider": "Google Gemini (free tier)",
+      "development_single_shot": 79.7,
+      "development_validated": 100.0,
+      "development_hybrid": 100.0,
+      "development_single_shot_answered": [
+        100.0,
+        51
+      ],
+      "development_planner_latency_s": 10.62,
+      "development_provider_errors": 13,
+      "held-out_single_shot": 100.0,
+      "held-out_validated": 100.0,
+      "held-out_hybrid": 100.0,
+      "held-out_planner_latency_s": 1.47,
+      "held-out_provider_errors": 0,
+      "answers": {
+        "n_answers": 16,
+        "answer_llm_failures": 0,
+        "first_drafts_with_unverifiable_content": 0,
+        "first_drafts_with_false_claims": 0,
+        "answers_regenerated": 0,
+        "final_answers_with_flagged_content": 0,
+        "mean_seconds_per_answer": 9.9
+      }
+    },
+    "nemotron-super-free": {
+      "label": "Nemotron 3 Super 120B (OpenRouter free)",
+      "provider": "OpenRouter (free models)",
+      "held-out_single_shot": 95.0,
+      "held-out_validated": 95.0,
+      "held-out_hybrid": 95.0,
+      "held-out_planner_latency_s": 1.96,
+      "held-out_provider_errors": 0
+    }
+  },
   "answer_validation": {
     "n_answers": 16,
+    "answer_llm_failures": 0,
     "first_drafts_with_unverifiable_content": 0,
     "first_drafts_with_wrong_or_garbled_ids": 0,
     "first_drafts_with_unverified_numbers": 0,
+    "first_drafts_with_false_claims": 0,
     "answers_regenerated": 0,
     "final_answers_with_flagged_content": 0,
-    "mean_seconds_per_answer": 5.8,
+    "mean_seconds_per_answer": 9.9,
     "details": [
       {
         "id": "B1",
-        "seconds": 6.1,
+        "seconds": 3.6,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "B2",
-        "seconds": 4.1,
+        "seconds": 3.5,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "B5",
-        "seconds": 9.8,
+        "seconds": 2.8,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "C1",
-        "seconds": 6.1,
+        "seconds": 4.3,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "C6",
-        "seconds": 6.0,
+        "seconds": 3.7,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "D1",
-        "seconds": 3.3,
+        "seconds": 3.7,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "D7",
-        "seconds": 4.1,
+        "seconds": 4.6,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "E1",
-        "seconds": 6.2,
+        "seconds": 36.2,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "E3",
-        "seconds": 8.3,
+        "seconds": 12.5,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "F1",
-        "seconds": 7.1,
+        "seconds": 5.1,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "F2",
-        "seconds": 5.9,
+        "seconds": 3.0,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "F3",
-        "seconds": 10.5,
+        "seconds": 62.1,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "G1",
-        "seconds": 5.2,
+        "seconds": 3.9,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "G4",
-        "seconds": 3.3,
+        "seconds": 2.7,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "H1",
-        "seconds": 3.2,
+        "seconds": 2.6,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       },
       {
         "id": "H4",
-        "seconds": 3.9,
+        "seconds": 3.3,
+        "models_used": [
+          "gemini-3.1-flash-lite"
+        ],
+        "answer_llm_failed": false,
         "draft_invalid_ids": [],
         "draft_corrected_ids": {},
         "draft_unverified_numbers": [],
+        "draft_false_claims": [],
         "final_invalid_ids": [],
         "final_unverified_numbers": [],
+        "final_false_claims": [],
         "auto_corrected_ids": {},
         "attempts": 1
       }
@@ -738,11 +968,11 @@
       {
         "question": "What is Chahine's rule?",
         "top3": [
-          "ChatMOF.pdf",
           "mofchat_methods.md",
+          "ChatMOF.pdf",
           "ChatMOF.pdf"
         ],
-        "top_score": 0.195,
+        "top_score": 0.197,
         "hit@1": false,
         "hit@3": false
       },
@@ -753,7 +983,7 @@
           "coremof_dataset.md",
           "coremof_dataset.md"
         ],
-        "top_score": 0.711,
+        "top_score": 0.692,
         "hit@1": true,
         "hit@3": true
       },
@@ -761,8 +991,8 @@
         "question": "What is the CSD refcode of HKUST-1?",
         "top3": [
           "coremof_dataset.md",
-          "coremof_dataset.md",
-          "mofchat_methods.md"
+          "mofchat_methods.md",
+          "coremof_dataset.md"
         ],
         "top_score": 0.322,
         "hit@1": false,
@@ -838,5 +1068,8 @@
         "top_score": 0.17
       }
     ]
-  }
+  },
+  "models_rerun_on": "2026-10-08 23:41",
+  "answers_rerun_on": "2026-10-08 23:38",
+  "knowledge_rerun_on": "2026-10-08 23:41"
 }

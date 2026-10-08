@@ -7,9 +7,8 @@ Sources
   knowledge/*.md         curated notes (dataset definitions, pore geometry and kinetic
                          diameters, application heuristics, MOF basics, MOFChat methods),
                          each with its references
-  *.pdf                  scientific papers found in knowledge/papers/ and in the parent
-                         folder (ChatMOF.pdf). Text is extracted page by page with pypdf;
-                         the reference list is skipped.
+  knowledge/papers/*.pdf scientific papers (ChatMOF.pdf). Text is extracted page by page
+                         with pypdf; the reference list is skipped.
 
 Chunks are embedded with Sentence-BERT (all-MiniLM-L6-v2, normalised) and stored in
 a FAISS inner-product index, so the retrieval score is cosine similarity.
