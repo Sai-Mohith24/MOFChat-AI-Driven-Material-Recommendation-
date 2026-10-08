@@ -1,0 +1,19 @@
+{
+  "features": [
+    "Density",
+    "LCD",
+    "PLD",
+    "LFPD"
+  ],
+  "unit": "",
+  "conformal": {
+    "level": 0.9,
+    "half_width": 0.07814373884201053,
+    "test_coverage": 0.8835274542429284
+  },
+  "shap_base_value": 0.5515063405036926,
+  "target": "Void_Fraction",
+  "hurdle_threshold": null,
+  "y_mean": 0.5514265272165438,
+  "y_std": 0.11782498876332188
+}

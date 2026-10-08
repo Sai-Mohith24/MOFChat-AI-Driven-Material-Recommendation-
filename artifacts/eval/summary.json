@@ -1,0 +1,842 @@
+{
+  "generated": "2026-10-08 11:12",
+  "benchmark": {
+    "n_queries": 64,
+    "systems": {
+      "Review-1 two-tower (shipped)": {
+        "result_accuracy": 9.4,
+        "constraint_precision_at_k": 30.3,
+        "plan_accuracy": null,
+        "mean_latency_s": 0.008,
+        "by_category": {
+          "single constraint": 12.5,
+          "multiple constraints": 10.0,
+          "metal / open metal site": 0.0,
+          "superlative": 50.0,
+          "multi-objective": 0.0,
+          "application": 0.0,
+          "count / average": 0.0,
+          "lookup / similar": 0.0,
+          "impossible request": 0.0,
+          "knowledge / off-topic": 0.0
+        }
+      },
+      "Rules planner (no LLM)": {
+        "result_accuracy": 100.0,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 100.0,
+        "mean_latency_s": 0.006,
+        "by_category": {
+          "single constraint": 100.0,
+          "multiple constraints": 100.0,
+          "metal / open metal site": 100.0,
+          "superlative": 100.0,
+          "multi-objective": 100.0,
+          "application": 100.0,
+          "count / average": 100.0,
+          "lookup / similar": 100.0,
+          "impossible request": 100.0,
+          "knowledge / off-topic": 100.0
+        }
+      },
+      "LLM planner, single shot (no validator)": {
+        "result_accuracy": 85.9,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 85.9,
+        "mean_latency_s": 1.601,
+        "by_category": {
+          "single constraint": 100.0,
+          "multiple constraints": 100.0,
+          "metal / open metal site": 100.0,
+          "superlative": 87.5,
+          "multi-objective": 40.0,
+          "application": 83.3,
+          "count / average": 66.7,
+          "lookup / similar": 66.7,
+          "impossible request": 100.0,
+          "knowledge / off-topic": 100.0
+        }
+      },
+      "LLM planner + validator": {
+        "result_accuracy": 93.8,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 90.6,
+        "mean_latency_s": 0.225,
+        "by_category": {
+          "single constraint": 100.0,
+          "multiple constraints": 100.0,
+          "metal / open metal site": 100.0,
+          "superlative": 100.0,
+          "multi-objective": 80.0,
+          "application": 83.3,
+          "count / average": 100.0,
+          "lookup / similar": 66.7,
+          "impossible request": 100.0,
+          "knowledge / off-topic": 100.0
+        }
+      },
+      "Hybrid (default)": {
+        "result_accuracy": 100.0,
+        "constraint_precision_at_k": 100.0,
+        "plan_accuracy": 96.9,
+        "mean_latency_s": 0.007,
+        "by_category": {
+          "single constraint": 100.0,
+          "multiple constraints": 100.0,
+          "metal / open metal site": 100.0,
+          "superlative": 100.0,
+          "multi-objective": 100.0,
+          "application": 100.0,
+          "count / average": 100.0,
+          "lookup / similar": 100.0,
+          "impossible request": 100.0,
+          "knowledge / off-topic": 100.0
+        }
+      }
+    },
+    "gold": {
+      "A1": {
+        "n": 21,
+        "relaxed": false
+      },
+      "A2": {
+        "n": 41,
+        "relaxed": false
+      },
+      "A3": {
+        "n": 501,
+        "relaxed": false
+      },
+      "A4": {
+        "n": 18,
+        "relaxed": false
+      },
+      "A5": {
+        "n": 68,
+        "relaxed": false
+      },
+      "A6": {
+        "n": 35,
+        "relaxed": false
+      },
+      "A7": {
+        "n": 340,
+        "relaxed": false
+      },
+      "A8": {
+        "n": 109,
+        "relaxed": false
+      },
+      "B1": {
+        "n": 206,
+        "relaxed": false
+      },
+      "B2": {
+        "n": 262,
+        "relaxed": false
+      },
+      "B3": {
+        "n": 1089,
+        "relaxed": false
+      },
+      "B4": {
+        "n": 648,
+        "relaxed": false
+      },
+      "B5": {
+        "n": 571,
+        "relaxed": false
+      },
+      "B6": {
+        "n": 382,
+        "relaxed": false
+      },
+      "B7": {
+        "n": 296,
+        "relaxed": false
+      },
+      "B8": {
+        "n": 462,
+        "relaxed": false
+      },
+      "B9": {
+        "n": 196,
+        "relaxed": false
+      },
+      "B10": {
+        "n": 1170,
+        "relaxed": false
+      },
+      "C1": {
+        "n": 333,
+        "relaxed": false
+      },
+      "C2": {
+        "n": 81,
+        "relaxed": false
+      },
+      "C3": {
+        "n": 56,
+        "relaxed": false
+      },
+      "C4": {
+        "n": 169,
+        "relaxed": false
+      },
+      "C5": {
+        "n": 73,
+        "relaxed": false
+      },
+      "C6": {
+        "n": 534,
+        "relaxed": false
+      },
+      "C7": {
+        "n": 186,
+        "relaxed": false
+      },
+      "D1": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "D2": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "D3": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "D4": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "D5": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "D6": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "D7": {
+        "n": 262,
+        "relaxed": false
+      },
+      "D8": {
+        "n": 2347,
+        "relaxed": false
+      },
+      "E1": {
+        "n": 2347,
+        "relaxed": false
+      },
+      "E2": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "E3": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "E4": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "E5": {
+        "n": 2240,
+        "relaxed": false
+      },
+      "F1": {
+        "n": 5969,
+        "relaxed": false
+      },
+      "F2": {
+        "n": 1170,
+        "relaxed": false
+      },
+      "F3": {
+        "n": 10226,
+        "relaxed": false
+      },
+      "F4": {
+        "n": 7034,
+        "relaxed": false
+      },
+      "F5": {
+        "n": 1769,
+        "relaxed": false
+      },
+      "F6": {
+        "n": 2752,
+        "relaxed": false
+      },
+      "G1": {
+        "n": 112,
+        "relaxed": false
+      },
+      "G2": {
+        "n": 1901,
+        "relaxed": false
+      },
+      "G3": {
+        "n": 20,
+        "relaxed": false
+      },
+      "G4": {
+        "n": 167,
+        "relaxed": false
+      },
+      "G5": {
+        "n": 7977,
+        "relaxed": false
+      },
+      "G6": {
+        "n": 3960,
+        "relaxed": false
+      },
+      "H1": {
+        "n": 1,
+        "relaxed": false
+      },
+      "H2": {
+        "n": 2,
+        "relaxed": false
+      },
+      "H3": {
+        "n": 1,
+        "relaxed": false
+      },
+      "H4": {
+        "n": 5,
+        "relaxed": false
+      },
+      "H5": {
+        "n": 3,
+        "relaxed": false
+      },
+      "H6": {
+        "n": 5,
+        "relaxed": false
+      },
+      "I1": {
+        "n": 0,
+        "relaxed": true
+      },
+      "I2": {
+        "n": 0,
+        "relaxed": true
+      },
+      "I3": {
+        "n": 0,
+        "relaxed": true
+      },
+      "J1": {
+        "n": null,
+        "relaxed": null
+      },
+      "J2": {
+        "n": null,
+        "relaxed": null
+      },
+      "J3": {
+        "n": null,
+        "relaxed": null
+      },
+      "J4": {
+        "n": null,
+        "relaxed": null
+      },
+      "J5": {
+        "n": null,
+        "relaxed": null
+      }
+    }
+  },
+  "heldout": {
+    "n_queries": 20,
+    "systems": {
+      "Review-1 two-tower (shipped)": {
+        "result_accuracy": 5.0,
+        "constraint_precision_at_k": 41.8,
+        "plan_accuracy": null,
+        "mean_latency_s": 0.007,
+        "by_category": {
+          "held-out": 5.0
+        }
+      },
+      "Rules planner (no LLM)": {
+        "result_accuracy": 80.0,
+        "constraint_precision_at_k": 72.7,
+        "plan_accuracy": 80.0,
+        "mean_latency_s": 0.005,
+        "by_category": {
+          "held-out": 80.0
+        }
+      },
+      "LLM planner, single shot (no validator)": {
+        "result_accuracy": 65.0,
+        "constraint_precision_at_k": 72.7,
+        "plan_accuracy": 65.0,
+        "mean_latency_s": 1.511,
+        "by_category": {
+          "held-out": 65.0
+        }
+      },
+      "LLM planner + validator": {
+        "result_accuracy": 70.0,
+        "constraint_precision_at_k": 89.1,
+        "plan_accuracy": 70.0,
+        "mean_latency_s": 0.182,
+        "by_category": {
+          "held-out": 70.0
+        }
+      },
+      "Hybrid (default)": {
+        "result_accuracy": 80.0,
+        "constraint_precision_at_k": 90.9,
+        "plan_accuracy": 80.0,
+        "mean_latency_s": 0.009,
+        "by_category": {
+          "held-out": 80.0
+        }
+      }
+    },
+    "gold": {
+      "X1": {
+        "n": 32,
+        "relaxed": false
+      },
+      "X2": {
+        "n": 118,
+        "relaxed": false
+      },
+      "X3": {
+        "n": 1114,
+        "relaxed": false
+      },
+      "X4": {
+        "n": 12020,
+        "relaxed": false
+      },
+      "X5": {
+        "n": 727,
+        "relaxed": false
+      },
+      "X6": {
+        "n": 1901,
+        "relaxed": false
+      },
+      "X7": {
+        "n": 5,
+        "relaxed": false
+      },
+      "X8": {
+        "n": 1,
+        "relaxed": false
+      },
+      "X9": {
+        "n": 812,
+        "relaxed": false
+      },
+      "X10": {
+        "n": 84,
+        "relaxed": false
+      },
+      "X11": {
+        "n": 7034,
+        "relaxed": false
+      },
+      "X12": {
+        "n": 3192,
+        "relaxed": false
+      },
+      "X13": {
+        "n": 8768,
+        "relaxed": false
+      },
+      "X14": {
+        "n": 0,
+        "relaxed": true
+      },
+      "X15": {
+        "n": 3251,
+        "relaxed": false
+      },
+      "X16": {
+        "n": 167,
+        "relaxed": false
+      },
+      "X17": {
+        "n": null,
+        "relaxed": null
+      },
+      "X18": {
+        "n": null,
+        "relaxed": null
+      },
+      "X19": {
+        "n": 388,
+        "relaxed": false
+      },
+      "X20": {
+        "n": 507,
+        "relaxed": false
+      }
+    }
+  },
+  "answer_validation": {
+    "n_answers": 16,
+    "first_drafts_with_unverifiable_content": 0,
+    "first_drafts_with_wrong_or_garbled_ids": 0,
+    "first_drafts_with_unverified_numbers": 0,
+    "answers_regenerated": 0,
+    "final_answers_with_flagged_content": 0,
+    "mean_seconds_per_answer": 5.8,
+    "details": [
+      {
+        "id": "B1",
+        "seconds": 6.1,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "B2",
+        "seconds": 4.1,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "B5",
+        "seconds": 9.8,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "C1",
+        "seconds": 6.1,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "C6",
+        "seconds": 6.0,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "D1",
+        "seconds": 3.3,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "D7",
+        "seconds": 4.1,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "E1",
+        "seconds": 6.2,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "E3",
+        "seconds": 8.3,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "F1",
+        "seconds": 7.1,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "F2",
+        "seconds": 5.9,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "F3",
+        "seconds": 10.5,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "G1",
+        "seconds": 5.2,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "G4",
+        "seconds": 3.3,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "H1",
+        "seconds": 3.2,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      },
+      {
+        "id": "H4",
+        "seconds": 3.9,
+        "draft_invalid_ids": [],
+        "draft_corrected_ids": {},
+        "draft_unverified_numbers": [],
+        "final_invalid_ids": [],
+        "final_unverified_numbers": [],
+        "auto_corrected_ids": {},
+        "attempts": 1
+      }
+    ]
+  },
+  "knowledge_retrieval": {
+    "n_questions": 12,
+    "hit@1": 0.75,
+    "hit@3": 0.8333333333333334,
+    "in_domain_accepted": 0.9166666666666666,
+    "off_topic_rejected": 1.0,
+    "threshold": 0.3,
+    "details": [
+      {
+        "question": "What is void fraction?",
+        "top3": [
+          "coremof_dataset.md",
+          "coremof_dataset.md",
+          "pore_geometry_and_gases.md"
+        ],
+        "top_score": 0.434,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "kinetic diameter of methane",
+        "top3": [
+          "pore_geometry_and_gases.md",
+          "pore_geometry_and_gases.md",
+          "applications.md"
+        ],
+        "top_score": 0.669,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "Why are open metal sites good for CO2 capture?",
+        "top3": [
+          "applications.md",
+          "mofs_basics.md",
+          "applications.md"
+        ],
+        "top_score": 0.608,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "What probe diameter was used for the geometric descriptors?",
+        "top3": [
+          "coremof_dataset.md",
+          "ChatMOF.pdf",
+          "ChatMOF.pdf"
+        ],
+        "top_score": 0.468,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "How accurate is ChatMOF for search, prediction and generation tasks?",
+        "top3": [
+          "ChatMOF.pdf",
+          "ChatMOF.pdf",
+          "ChatMOF.pdf"
+        ],
+        "top_score": 0.69,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "What is Chahine's rule?",
+        "top3": [
+          "ChatMOF.pdf",
+          "mofchat_methods.md",
+          "ChatMOF.pdf"
+        ],
+        "top_score": 0.195,
+        "hit@1": false,
+        "hit@3": false
+      },
+      {
+        "question": "How does MOFChat rank MOFs with several objectives?",
+        "top3": [
+          "mofchat_methods.md",
+          "coremof_dataset.md",
+          "coremof_dataset.md"
+        ],
+        "top_score": 0.711,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "What is the CSD refcode of HKUST-1?",
+        "top3": [
+          "coremof_dataset.md",
+          "coremof_dataset.md",
+          "mofchat_methods.md"
+        ],
+        "top_score": 0.322,
+        "hit@1": false,
+        "hit@3": false
+      },
+      {
+        "question": "Which topologies does ChatMOF's genetic algorithm use?",
+        "top3": [
+          "ChatMOF.pdf",
+          "ChatMOF.pdf",
+          "ChatMOF.pdf"
+        ],
+        "top_score": 0.705,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "What does molecular sieving mean?",
+        "top3": [
+          "pore_geometry_and_gases.md",
+          "ChatMOF.pdf",
+          "ChatMOF.pdf"
+        ],
+        "top_score": 0.471,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "Is pore volume independent of void fraction and density?",
+        "top3": [
+          "pore_geometry_and_gases.md",
+          "coremof_dataset.md",
+          "coremof_dataset.md"
+        ],
+        "top_score": 0.488,
+        "hit@1": false,
+        "hit@3": true
+      },
+      {
+        "question": "What limits the number of structures ChatMOF can generate?",
+        "top3": [
+          "ChatMOF.pdf",
+          "ChatMOF.pdf",
+          "ChatMOF.pdf"
+        ],
+        "top_score": 0.54,
+        "hit@1": true,
+        "hit@3": true
+      },
+      {
+        "question": "recipe for chocolate cake",
+        "off_topic": true,
+        "top_score": 0.174
+      },
+      {
+        "question": "who won the football world cup",
+        "off_topic": true,
+        "top_score": 0.114
+      },
+      {
+        "question": "best smartphone to buy this year",
+        "off_topic": true,
+        "top_score": 0.237
+      },
+      {
+        "question": "how do I learn to play guitar",
+        "off_topic": true,
+        "top_score": 0.156
+      },
+      {
+        "question": "what is the weather in Chennai tomorrow",
+        "off_topic": true,
+        "top_score": 0.17
+      }
+    ]
+  }
+}

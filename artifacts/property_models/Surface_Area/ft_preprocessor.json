@@ -1,0 +1,35 @@
+{
+  "numeric": [
+    "Density",
+    "LCD",
+    "PLD",
+    "LFPD",
+    "Void_Fraction",
+    "Pore_Volume"
+  ],
+  "categorical": [],
+  "log_cols": [
+    "Density",
+    "LCD",
+    "PLD",
+    "LFPD",
+    "Pore_Volume"
+  ],
+  "mean": {
+    "Density": 0.7881786894110353,
+    "LCD": 2.1181126348391452,
+    "PLD": 1.833167129627971,
+    "LFPD": 2.1071970401222195,
+    "Void_Fraction": 0.5884942927228127,
+    "Pore_Volume": 0.43814873442037544
+  },
+  "std": {
+    "Density": 0.20276934193298807,
+    "LCD": 0.3543130979640289,
+    "PLD": 0.3099788373603449,
+    "LFPD": 0.3523443648917377,
+    "Void_Fraction": 0.11082502654250917,
+    "Pore_Volume": 0.21187186553488152
+  },
+  "vocab": {}
+}

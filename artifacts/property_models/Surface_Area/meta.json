@@ -1,0 +1,21 @@
+{
+  "features": [
+    "Density",
+    "LCD",
+    "PLD",
+    "LFPD",
+    "Void_Fraction",
+    "Pore_Volume"
+  ],
+  "unit": "m\u00b2/g",
+  "conformal": {
+    "level": 0.9,
+    "half_width": 287.69478515624996,
+    "test_coverage": 0.9045977011494253
+  },
+  "shap_base_value": 1503.1051025390625,
+  "target": "Surface_Area",
+  "hurdle_threshold": 3.3107,
+  "y_mean": 1504.5591797547015,
+  "y_std": 1102.1959309384658
+}

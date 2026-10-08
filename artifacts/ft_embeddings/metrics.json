@@ -1,0 +1,58 @@
+{
+  "epochs_trained": 38,
+  "best_val_masked_mse": 0.044098373502492905,
+  "train_seconds": 63.3,
+  "model": {
+    "d_token": 64,
+    "n_layers": 3,
+    "n_heads": 4,
+    "ffn_mult": 2.0,
+    "dropout": 0.1
+  },
+  "mask_prob": 0.3,
+  "n_params": 114378,
+  "reconstruction_r2_unmasked": {
+    "LCD": 0.9908100366592407,
+    "PLD": 0.9859881401062012,
+    "LFPD": 0.9907827377319336,
+    "Density": 0.9918385744094849,
+    "Surface_Area": 0.9975373148918152,
+    "ASA_vol": 0.9973574280738831,
+    "Void_Fraction": 0.9842427968978882,
+    "Pore_Volume": 0.9963756203651428,
+    "NASA_grav": 0.9821894764900208,
+    "NAV": 0.2791006565093994
+  },
+  "reconstruction_r2_masked": {
+    "LCD": 0.892129123210907,
+    "PLD": 0.8101155161857605,
+    "LFPD": 0.9109807014465332,
+    "Density": 0.8796069622039795,
+    "Surface_Area": 0.9776757955551147,
+    "ASA_vol": 0.9765890836715698,
+    "Void_Fraction": 0.912872850894928,
+    "Pore_Volume": 0.9581727981567383,
+    "NASA_grav": 0.7077913284301758,
+    "NAV": -0.007002472877502441
+  },
+  "similarity": {
+    "k": 10,
+    "n_queries": 1000,
+    "ft_embedding": {
+      "mean_abs_descriptor_diff_std": 0.07669588178396225,
+      "same_metal_rate": 0.2781,
+      "same_open_metal_site_rate": 0.7022
+    },
+    "raw_descriptor_knn": {
+      "mean_abs_descriptor_diff_std": 0.06773509085178375,
+      "same_metal_rate": 0.228,
+      "same_open_metal_site_rate": 0.6643
+    },
+    "random": {
+      "mean_abs_descriptor_diff_std": 0.9521650671958923,
+      "same_metal_rate": 0.0798,
+      "same_open_metal_site_rate": 0.5568
+    },
+    "overlap_ft_vs_raw_knn": 0.6160999999999999
+  }
+}

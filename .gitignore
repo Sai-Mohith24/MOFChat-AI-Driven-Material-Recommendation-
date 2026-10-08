@@ -1,4 +1,15 @@
 venv/
+.venv/
 __pycache__/
-faiss_mof_index/
 .DS_Store
+.pytest_cache/
+# large, regenerable or local-only artifacts
+artifacts/baseline_review1/
+artifacts/*.log
+# old review-1 copies kept locally
+1st_Review_Presentation/
+1st_Review_Presentation.zip
+faiss_mof_index/
+# local editor/agent skill links into venv
+.agents/
+.claude/

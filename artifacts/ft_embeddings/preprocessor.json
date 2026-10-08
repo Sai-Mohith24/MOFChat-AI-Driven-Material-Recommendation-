@@ -1,0 +1,103 @@
+{
+  "numeric": [
+    "LCD",
+    "PLD",
+    "LFPD",
+    "Density",
+    "Surface_Area",
+    "ASA_vol",
+    "Void_Fraction",
+    "Pore_Volume",
+    "NASA_grav",
+    "NAV"
+  ],
+  "categorical": [
+    "Metal_Group",
+    "Has_OMS"
+  ],
+  "log_cols": [
+    "LCD",
+    "PLD",
+    "LFPD",
+    "Density",
+    "Surface_Area",
+    "ASA_vol",
+    "Pore_Volume",
+    "NASA_grav",
+    "NAV"
+  ],
+  "mean": {
+    "LCD": 2.004113099085373,
+    "PLD": 1.7009823577221697,
+    "LFPD": 1.9938010590446105,
+    "Density": 0.8411681844628442,
+    "Surface_Area": 5.129724874299774,
+    "ASA_vol": 5.235135325821889,
+    "Void_Fraction": 0.5516839267886855,
+    "Pore_Volume": 0.38789871672894605,
+    "NASA_grav": 1.5981614803361672,
+    "NAV": 1.8772942197541503e-05
+  },
+  "std": {
+    "LCD": 0.3713627617482182,
+    "PLD": 0.3467864314283863,
+    "LFPD": 0.3698795486726284,
+    "Density": 0.21283648989507017,
+    "Surface_Area": 3.2000450064903267,
+    "ASA_vol": 3.220296641889629,
+    "Void_Fraction": 0.11816938722908586,
+    "Pore_Volume": 0.20594639669642378,
+    "NASA_grav": 2.446030882944225,
+    "NAV": 0.0010530510884366928
+  },
+  "vocab": {
+    "Metal_Group": [
+      "<other>",
+      "Ag",
+      "Al",
+      "Ba",
+      "Ca",
+      "Cd",
+      "Ce",
+      "Co",
+      "Cr",
+      "Cu",
+      "Dy",
+      "Er",
+      "Eu",
+      "Fe",
+      "Ga",
+      "Gd",
+      "Ho",
+      "In",
+      "K",
+      "La",
+      "Li",
+      "Mg",
+      "Mn",
+      "Mo",
+      "Na",
+      "Nd",
+      "Ni",
+      "Pr",
+      "Ru",
+      "Sc",
+      "Sm",
+      "Sr",
+      "Tb",
+      "Tm",
+      "U",
+      "V",
+      "W",
+      "Y",
+      "Yb",
+      "Zn",
+      "Zr"
+    ],
+    "Has_OMS": [
+      "<other>",
+      "0",
+      "1"
+    ]
+  }
+}

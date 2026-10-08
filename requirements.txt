@@ -1,11 +1,25 @@
-langchain
-langchain-community
-langchain-huggingface
-faiss-cpu
-sentence-transformers
-pandas
-streamlit
-openpyxl
-langchain-ollama
-torch
-scikit-learn
+# Tested with Python 3.14 on macOS (Apple silicon). Install: pip install -r requirements.txt
+# LLM: Ollama (https://ollama.com) with `ollama pull llama3` - optional, MOFChat falls back to its rule-based planner.
+langchain==1.3.14
+langchain-community==0.4.2
+langchain-core==1.5.3
+langchain-huggingface==1.2.2
+langchain-ollama==1.1.0
+langchain-text-splitters==1.1.2
+sentence-transformers==5.7.0
+transformers==5.14.1
+torch==2.13.0
+faiss-cpu==1.15.0
+xgboost==3.4.1
+shap==0.52.0
+scikit-learn==1.9.0
+pandas==3.0.5
+numpy==2.5.1
+openpyxl==3.1.5
+pypdf==6.19.0
+httpx==0.28.1
+streamlit==1.61.1
+altair==6.2.2
+matplotlib==3.11.2
+seaborn==0.13.2
+pytest==9.1.1

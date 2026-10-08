@@ -1,61 +1,62 @@
+"""
+MOFChat - Streamlit entry point.
+
+  streamlit run app.py
+"""
+
+import mofchat  # noqa: F401  (safe native-library import order; must come first)
+
 import streamlit as st
-import os
-from agent_core import MOFHybridAgent
 
-# Configure Streamlit page
-st.set_page_config(
-    page_title="MOFChat: AI-Driven Material Recommendation",
-    page_icon="🧪",
-    layout="centered"
-)
+from mofchat.config import DB_PATH, FT_EMBED_DIR, KNOWLEDGE_INDEX_DIR
+from mofchat.llm import status as llm_status
+from mofchat.properties import available_targets
 
-# Load the hybrid agent using st.cache_resource to avoid re-initialization
-@st.cache_resource
-def load_agent():
-    # Verify prerequisites exist
-    if not os.path.exists("hmof.db"):
-        st.error("Database 'hmof.db' not found. Please run setup_db.py first.")
-        st.stop()
-    if not os.path.exists("faiss_mof_index"):
-        st.error("Vector store 'faiss_mof_index' not found. Please run setup_vectorstore.py first.")
-        st.stop()
-    if not os.path.exists("faiss_ft_index"):
-        st.error("FT-Transformer store 'faiss_ft_index' not found. Please run train_ft.py first.")
-        st.stop()
-        
-    return MOFHybridAgent()
+st.set_page_config(page_title="MOFChat", page_icon=":material/science:", layout="wide")
 
-st.title("MOFChat: AI-Driven Material Recommendation 🧪")
-st.markdown("Ask questions about Metal-Organic Frameworks (MOFs) to get recommendations based on domain knowledge and physical properties.")
+if not DB_PATH.exists():
+    st.error("Database not found. Run `python setup_db.py` (or `python run_pipeline.py`) first.",
+             icon=":material/error:")
+    st.stop()
 
-# Initialize the agent
-agent = load_agent()
-
-# Initialize chat history in session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+with st.sidebar:
+    st.subheader("Settings")
+    ok, msg = llm_status()
+    st.session_state.use_llm = st.toggle("Use Llama 3 (planner + answer writer)", value=ok, disabled=not ok,
+                                         help="Without the LLM, MOFChat uses its deterministic rule-based "
+                                              "planner and template answers.")
+    st.session_state.planner_mode = st.segmented_control(
+        "Planner", ["hybrid", "llm", "rules"], default="hybrid", disabled=not st.session_state.use_llm,
+        help="hybrid = LLM plan + explicit numbers the rule parser is certain about; "
+             "llm = LLM only (with validator); rules = deterministic parser only.") or "hybrid"
+    st.session_state.show_details = st.toggle("Show plan, SQL and validation", value=True)
+    if st.button("Clear chat", icon=":material/delete_sweep:", width="stretch"):
+        st.session_state.messages = []
+        st.session_state.pop("suggestion", None)
+        st.rerun()
 
-# React to user input
-if prompt := st.chat_input("E.g., 'Find MOFs suitable for CO2 capture with surface area > 3000'"):
-    
-    # Display user message in chat message container
-    st.chat_message("user").markdown(prompt)
-    
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.subheader("System status")
+    st.markdown(f"{':material/check_circle:' if ok else ':material/error:'} LLM: {msg if ok else msg}")
+    st.markdown(":material/check_circle: CoRE-MOF database (12,020 MOFs)")
+    st.markdown(f"{':material/check_circle:' if (KNOWLEDGE_INDEX_DIR / 'index.faiss').exists() else ':material/error:'} "
+                "Knowledge index (RAG)")
+    st.markdown(f"{':material/check_circle:' if (FT_EMBED_DIR / 'index.faiss').exists() else ':material/error:'} "
+                "FT-Transformer similarity index")
+    t = available_targets()
+    st.markdown(f"{':material/check_circle:' if t else ':material/error:'} Property models: "
+                f"{', '.join(t) if t else 'run train_property_models.py'}")
 
-    # Display a loading spinner while the agent processes the request
-    with st.spinner("Analyzing hMOF database & vector store..."):
-        response = agent.answer_query(prompt)
-        
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        st.markdown(response)
-        
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": response})
+page = st.navigation(
+    [
+        st.Page("app_pages/chat.py", title="Chat", icon=":material/chat:", default=True),
+        st.Page("app_pages/explore.py", title="Explore & optimise", icon=":material/travel_explore:"),
+        st.Page("app_pages/predict.py", title="Predict & explain", icon=":material/model_training:"),
+        st.Page("app_pages/evaluation.py", title="Evaluation", icon=":material/fact_check:"),
+        st.Page("app_pages/about.py", title="About", icon=":material/info:"),
+    ],
+    position="top",
+)
+page.run()
