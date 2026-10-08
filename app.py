@@ -19,6 +19,9 @@ def load_agent():
     if not os.path.exists("faiss_mof_index"):
         st.error("Vector store 'faiss_mof_index' not found. Please run setup_vectorstore.py first.")
         st.stop()
+    if not os.path.exists("faiss_ft_index"):
+        st.error("FT-Transformer store 'faiss_ft_index' not found. Please run train_ft.py first.")
+        st.stop()
         
     return MOFHybridAgent()
 
@@ -48,7 +51,7 @@ if prompt := st.chat_input("E.g., 'Find MOFs suitable for CO2 capture with surfa
 
     # Display a loading spinner while the agent processes the request
     with st.spinner("Analyzing hMOF database & vector store..."):
-        response = agent.run(prompt)
+        response = agent.answer_query(prompt)
         
     # Display assistant response in chat message container
     with st.chat_message("assistant"):
