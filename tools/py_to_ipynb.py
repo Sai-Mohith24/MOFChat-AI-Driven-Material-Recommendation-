@@ -1,7 +1,7 @@
 """
 py_to_ipynb.py - save Python files as Jupyter notebooks (.ipynb) next to them.
 
-  python tools/py_to_ipynb.py FILE_OR_FOLDER [...] [--project-root DIR] [--overwrite]
+  python tools/py_to_ipynb.py FILE_OR_FOLDER [...] [--project-root DIR] [--sync | --overwrite]
 
 The .py files stay the source of truth (the app, tests and scripts import them);
 rerun this script after editing a .py file to refresh its notebook.
@@ -21,6 +21,9 @@ Small changes so the notebook runs from its own folder (files under --project-ro
     own command-line arguments to the kernel
 
 Existing notebooks are skipped unless --overwrite is given (they may contain outputs).
+--sync (the safe default for refreshing) creates missing notebooks and refreshes the ones this
+script made. A hand-made notebook (e.g. an executed walkthrough) is never touched; if it does not
+contain the script's code, the duplicate is written next to it as NAME_from_py.ipynb instead.
 """
 
 from __future__ import annotations
@@ -128,11 +131,32 @@ def is_generated(nb_path: Path) -> bool:
         return False
 
 
+def contains_code(nb_path: Path, py: Path) -> bool:
+    """True if every code line of the script (outside its module docstring) appears in the notebook."""
+    try:
+        cells = json.loads(nb_path.read_text()).get("cells", [])
+    except (OSError, ValueError):
+        return False
+    have = "\n".join("".join(c.get("source", [])) for c in cells)
+    src = py.read_text()
+    body = ast.parse(src).body
+    start = body[0].end_lineno if body and isinstance(body[0], ast.Expr) and \
+        isinstance(getattr(body[0], "value", None), ast.Constant) else 0
+    return all(line.strip() in have for line in src.splitlines()[start:]
+               if line.strip() and not line.strip().startswith("#"))
+
+
 def convert(py: Path, project_root: Path | None, overwrite: bool = False, sync: bool = False) -> Path | None:
     nb_path = py.with_suffix(".ipynb")
+    beside = None              # a hand-made notebook that keeps its name
     if nb_path.exists() and not overwrite and not (sync and is_generated(nb_path)):
-        print(f"skip (notebook exists): {nb_path}")
-        return None
+        if not sync or contains_code(nb_path, py):
+            print(f"skip (notebook exists): {nb_path}")
+            return None
+        beside, nb_path = nb_path, py.with_name(py.stem + "_from_py.ipynb")
+        if nb_path.exists() and not is_generated(nb_path):
+            print(f"skip (notebook exists): {nb_path}")
+            return None
     src = py.read_text()
     doc, parts = split_cells(src)
 
@@ -145,7 +169,10 @@ def convert(py: Path, project_root: Path | None, overwrite: bool = False, sync: 
     cells = []
     header = f"# `{rel.as_posix()}`\n\nNotebook version of `{rel.as_posix()}`. The `.py` file is the source of truth"
     header += (" (the app and the other scripts import it); after editing it, regenerate this notebook with "
-               "`python tools/py_to_ipynb.py " + rel.as_posix() + " --overwrite`." if inside else ".")
+               "`python tools/py_to_ipynb.py " + rel.as_posix() + " --sync`." if inside else ".")
+    if beside is not None:
+        header += (f" `{beside.name}` next to it is a hand-made notebook with its own code and outputs; "
+                   "it is kept as it is.")
     if doc:
         header += "\n\n```text\n" + doc.strip("\n") + "\n```"   # docstrings are aligned plain text
     cells.append(markdown(header))
@@ -179,7 +206,11 @@ def convert(py: Path, project_root: Path | None, overwrite: bool = False, sync: 
           "metadata": {"kernelspec": KERNEL,
                        "language_info": {"name": "python", "version": ".".join(map(str, sys.version_info[:3]))}},
           "nbformat": 4, "nbformat_minor": 5}
-    nb_path.write_text(json.dumps(nb, indent=1, ensure_ascii=False) + "\n")
+    text = json.dumps(nb, indent=1, ensure_ascii=False) + "\n"
+    if nb_path.exists() and nb_path.read_text() == text:
+        print(f"unchanged: {nb_path}")
+        return nb_path
+    nb_path.write_text(text)
     print(f"wrote {nb_path}  ({len(cells)} cells)")
     return nb_path
 
