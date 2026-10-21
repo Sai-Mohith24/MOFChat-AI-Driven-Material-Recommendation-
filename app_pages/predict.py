@@ -3,16 +3,17 @@ import json
 import pandas as pd
 import streamlit as st
 
+from mofchat import theme
 from mofchat.config import PROPERTY_MODEL_DIR
 from mofchat.db import resolve_mof_id
 from mofchat.features import PROPERTY_TARGETS
 from mofchat.properties import available_targets, predict
 from mofchat.ui import label, materials, render_prediction
 
-st.title("Predict & explain", anchor=False)
-st.caption("Surrogate models predict a property from cheaper geometric descriptors. XGBoost gives the main "
-           "prediction with a calibrated 90% interval; SHAP explains it feature by feature; the FT-Transformer "
-           "gives a deep-learning second opinion.")
+theme.page_header("Predict & explain", "Surrogate models · XGBoost + SHAP",
+                  "Surrogate models predict a property from cheaper geometric descriptors. XGBoost gives the main "
+                  "prediction with a calibrated 90% interval; SHAP explains it feature by feature; the "
+                  "FT-Transformer gives a deep-learning second opinion.")
 
 targets = available_targets()
 if not targets:
@@ -29,7 +30,7 @@ actual = None
 with st.form("predict_form", border=True):
     if source == "Use a MOF from the database":
         mof = st.text_input("MOF ID (CSD refcode or common name, e.g. FIQCEN, HKUST-1, ZIF-8)", "FIQCEN")
-        submitted = st.form_submit_button("Predict", icon=":material/play_arrow:")
+        submitted = st.form_submit_button("Predict", icon=":material/play_arrow:", type="primary")
         ids = resolve_mof_id(mof) if mof else []
         inputs = {}
         if ids:
@@ -50,7 +51,7 @@ with st.form("predict_form", border=True):
                                                  step=0.01 if hi < 5 else 0.1, format="%.3f")
         if "Pore_Volume" in feats:
             st.caption("Pore volume is computed as void fraction / density (exact identity in this dataset).")
-        submitted = st.form_submit_button("Predict", icon=":material/play_arrow:")
+        submitted = st.form_submit_button("Predict", icon=":material/play_arrow:", type="primary")
 
 if inputs:
     render_prediction(predict(target, inputs, actual=actual))
@@ -67,3 +68,5 @@ if metrics_path.exists():
                                     "R²": st.column_config.NumberColumn(format="%.4f")})
         st.caption(f"Split-conformal 90% interval: half-width {m['conformal']['half_width']:.3g} "
                    f"{m['unit']}, test coverage {m['conformal']['test_coverage']:.1%}.")
+
+theme.colophon()

@@ -8,11 +8,12 @@ import mofchat  # noqa: F401  (safe native-library import order; must come first
 
 import streamlit as st
 
-from mofchat.config import DB_PATH, FT_EMBED_DIR, KNOWLEDGE_INDEX_DIR
-from mofchat import llm
+from mofchat.config import COLUMN_BY_NAME, DB_PATH, FT_EMBED_DIR, KNOWLEDGE_INDEX_DIR
+from mofchat import llm, theme
 from mofchat.properties import available_targets
 
-st.set_page_config(page_title="MOFChat", page_icon=":material/science:", layout="wide")
+st.set_page_config(page_title="MOFChat", page_icon=":material/deployed_code:", layout="wide")
+theme.apply_theme()
 
 if not DB_PATH.exists():
     st.error("Database not found. Run `python setup_db.py` (or `python run_pipeline.py`) first.",
@@ -23,10 +24,12 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 with st.sidebar:
+    theme.brand()
     st.subheader("Settings")
     models = llm.list_models()
     avail = [m.model_id for m, ok_, _ in models if ok_]
     ok = bool(avail)
+    st.session_state.models_ready = (len(avail), len(models))
     st.session_state.use_llm = st.toggle("Use a language model", value=ok, disabled=not ok,
                                          help="Without an LLM, MOFChat uses its deterministic rule-based "
                                               "planner and template answers.")
@@ -54,8 +57,17 @@ with st.sidebar:
         st.rerun()
 
     st.subheader("System status")
-    st.markdown(f"{':material/check_circle:' if ok else ':material/error:'} LLM: {msg} "
-                f"({len(avail)} of {len(models)} models ready)")
+    kn = (KNOWLEDGE_INDEX_DIR / "index.faiss").exists()
+    ft = (FT_EMBED_DIR / "index.faiss").exists()
+    t = available_targets()
+    theme.status_list([
+        (ok, f"LLM: {msg}", f"{len(avail)} of {len(models)} models ready"),
+        (True, "CoRE-MOF database", "12,020 MOFs"),
+        (kn, "Knowledge index (RAG)", "ready" if kn else "missing: run setup_vectorstore.py"),
+        (ft, "FT-Transformer similarity index", "ready" if ft else "missing: run train_ft.py"),
+        (bool(t), "Property models", ", ".join(COLUMN_BY_NAME[c].label for c in t) if t
+         else "missing: run train_property_models.py"),
+    ])
     with st.expander("All language models", icon=":material/smart_toy:"):
         current = None
         for spec, ok_, why in models:
@@ -64,14 +76,6 @@ with st.sidebar:
                 st.markdown(f"**{llm.PROVIDER_LABEL[current]}**")
             st.markdown(f"{':material/check_circle:' if ok_ else ':material/block:'} {spec.label}  \n"
                         f":gray[{why if not ok_ else (spec.notes or why)}]")
-    st.markdown(":material/check_circle: CoRE-MOF database (12,020 MOFs)")
-    st.markdown(f"{':material/check_circle:' if (KNOWLEDGE_INDEX_DIR / 'index.faiss').exists() else ':material/error:'} "
-                "Knowledge index (RAG)")
-    st.markdown(f"{':material/check_circle:' if (FT_EMBED_DIR / 'index.faiss').exists() else ':material/error:'} "
-                "FT-Transformer similarity index")
-    t = available_targets()
-    st.markdown(f"{':material/check_circle:' if t else ':material/error:'} Property models: "
-                f"{', '.join(t) if t else 'run train_property_models.py'}")
 
 page = st.navigation(
     [

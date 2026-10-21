@@ -1,10 +1,30 @@
 import streamlit as st
 
-from mofchat.ui import get_agent, render_response
+from mofchat import theme
+from mofchat.ui import get_agent, materials, render_response
 
-st.title("MOFChat", anchor=False)
-st.caption("Ask for MOFs in plain English. Every number shown comes from the 12,020-MOF CoRE-MOF database; "
-           "the plan, SQL and validation are shown under each answer.")
+INTRO = ("Ask for MOFs in plain English. Every number shown comes from the 12,020-MOF CoRE-MOF database; "
+         "the plan, SQL and validation are shown under each answer.")
+STEPS = [
+    ("Plan", "An LLM (Gemini, Groq, OpenRouter or local Ollama) or the rule parser turns your question "
+             "into a JSON plan, never code."),
+    ("Validate", "Columns, units, physical ranges and every number in the plan are checked; errors go back "
+                 "to the LLM."),
+    ("Compute", "Read-only SQL, NSGA-II ranking, XGBoost + SHAP, FT-Transformer similarity or RAG over the "
+                "ChatMOF paper."),
+    ("Verify", "MOF IDs, numbers and comparison claims in the answer must match the results before it is shown."),
+]
+
+if st.session_state.messages:
+    theme.page_header("MOFChat", "Conversational MOF recommender", INTRO)
+else:
+    df = materials()
+    ready, total = st.session_state.get("models_ready", (0, 0))
+    theme.hero("MOF", "Chat", "CoRE-MOF 2019 · explainable recommendation", INTRO, [
+        (f"{len(df):,}", "MOFs"),
+        (str(len({m for s in df.Metal_Type for m in s.split(",") if m})), "metals"),
+        (f"{ready}/{total}", "language models ready"),
+    ])
 
 SUGGESTIONS = {
     ":material/filter_alt: Surface area > 4000 and void fraction > 0.8":
@@ -23,9 +43,11 @@ show_details = st.session_state.get("show_details", True)
 
 prompt = st.chat_input("e.g. Cu MOFs with open metal sites and PLD between 4 and 6 Å", submit_mode="disable")
 if not st.session_state.messages:
+    theme.section_label("Try asking")
     picked = st.pills("Try asking", list(SUGGESTIONS), label_visibility="collapsed", key="suggestion")
     if picked:
         prompt = SUGGESTIONS[picked]
+    theme.steps(STEPS)
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     st.rerun()

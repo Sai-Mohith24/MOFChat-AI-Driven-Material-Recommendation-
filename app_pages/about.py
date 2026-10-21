@@ -1,6 +1,9 @@
 import streamlit as st
 
-st.title("About MOFChat", anchor=False)
+from mofchat import theme
+
+theme.page_header("About MOFChat", "Project · Team 09",
+                  "Course project for 22AIE452 Data Driven Material Modeling and Simulation.")
 st.markdown("""
 MOFChat is an explainable, data-grounded assistant for choosing metal-organic frameworks (MOFs).
 It answers questions over the **12,020-MOF CoRE-MOF 2019 table** used by ChatMOF (Kang & Kim, *Nat. Commun.* 2024),
@@ -29,6 +32,12 @@ graph TD
     M --> SH[SHAP explanation]
     A --> AV[Answer validator<br/>IDs & numbers must match results]
     AV --> U[Answer + verified table + plan/SQL trace]
+    classDef default fill:#E1F2F6,stroke:#0891B2,stroke-width:1.5px,color:#0F2733
+    classDef llm fill:#FBEBE1,stroke:#D9622B,stroke-width:1.5px,color:#0F2733
+    classDef check fill:#E2F3EC,stroke:#1E8A5F,stroke-width:1.5px,color:#0F2733
+    class P,A llm
+    class V,AV check
+    linkStyle default stroke:#6B8590,stroke-width:1.4px
 """, width="stretch")
 
 st.subheader("How it improves on the base paper (ChatMOF)", anchor=False)
@@ -54,3 +63,5 @@ st.markdown("""
 st.subheader("Team", anchor=False)
 st.markdown("Team 09 - 22AIE452 Data Driven Material Modeling and Simulation: Amrutha T (24255), "
             "Charan Tej Reddy Y (24259), Poojitha D (24263), Enku Sai Mohith (24316), Ramu Jahna Bindu (24249).")
+
+theme.colophon()

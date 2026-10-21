@@ -2,17 +2,18 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
+from mofchat import theme
 from mofchat.config import NUMERIC_COLUMNS
 from mofchat.optimizer import nsga2_rank, pareto_front_mask
 from mofchat.ui import column_config, label, materials
 
-st.title("Explore & optimise", anchor=False)
-st.caption("Filter the database directly, then rank the remaining MOFs on two objectives with NSGA-II.")
+theme.page_header("Explore & optimise", "Database explorer · NSGA-II",
+                  "Filter the database directly, then rank the remaining MOFs on two objectives with NSGA-II.")
 
 df = materials()
 metal_options = sorted({m for s in df.Metal_Type for m in s.split(",") if m})
 
-with st.container(border=True):
+with st.container(border=True, key="filters"):
     cols = st.columns(3)
     ranges = {}
     for i, col in enumerate(["Surface_Area", "Density", "Void_Fraction", "PLD", "LCD", "Pore_Volume"]):
@@ -42,7 +43,7 @@ sub = df[mask]
 st.metric("MOFs matching the filters", f"{len(sub):,}", border=True, width="content")
 
 st.subheader("Multi-objective ranking (NSGA-II)", anchor=False)
-c1, c2, c3, c4, c5 = st.columns([3, 1.3, 3, 1.3, 1.2])
+c1, c2, c3, c4, c5 = st.columns([3, 1.7, 3, 1.7, 1.2])
 x = c1.selectbox("Objective 1", NUMERIC_COLUMNS, index=NUMERIC_COLUMNS.index("Surface_Area"), format_func=label)
 dx = c2.segmented_control("Direction 1", ["max", "min"], default="max", key="d1") or "max"
 y = c3.selectbox("Objective 2", NUMERIC_COLUMNS, index=NUMERIC_COLUMNS.index("Density"), format_func=label)
@@ -61,7 +62,7 @@ else:
     plot.loc[plot.MOF_ID.isin(set(top.MOF_ID)), "set"] = "recommended"
     if len(plot) > 6000:
         plot = pd.concat([plot[plot.set == "candidate"].sample(6000, random_state=0), plot[plot.set != "candidate"]])
-    scale = alt.Scale(domain=["candidate", "Pareto front", "recommended"], range=["#c7c7c7", "#4c78a8", "#e45756"])
+    scale = alt.Scale(domain=theme.PARETO_DOMAIN, range=theme.PARETO_RANGE)
     chart = alt.Chart(plot).mark_circle().encode(
         x=alt.X(f"{x}:Q", title=label(x)), y=alt.Y(f"{y}:Q", title=label(y)),
         color=alt.Color("set:N", scale=scale, title=None),
@@ -76,3 +77,5 @@ else:
 
 with st.expander(f"All {len(sub):,} matching MOFs", icon=":material/table:"):
     st.dataframe(sub, hide_index=True, column_config=column_config(sub))
+
+theme.colophon()

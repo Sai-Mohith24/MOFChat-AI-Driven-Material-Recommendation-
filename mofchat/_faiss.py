@@ -5,12 +5,14 @@ On macOS, XGBoost, PyTorch, faiss-cpu (and scikit-learn) each ship their own
 copy of the OpenMP runtime (libomp). With several runtimes in one process:
   * some import orders segfault (tested stable order: xgboost -> torch -> faiss);
   * two runtimes with active thread pools can deadlock at an OpenMP barrier
-    (observed: torch tensor copy hanging after an XGBoost fit).
+    (observed: torch tensor copy hanging after an XGBoost fit);
+  * multi-threaded PyTorch can segfault even without XGBoost (observed with
+    torch 2.13: the first numpy -> tensor copy in train_ft.py at 8 threads).
 MOFChat therefore runs OpenMP single-threaded by default (OMP_NUM_THREADS=1).
 The models are small, so the cost is a few seconds of training time.
-Set MOFCHAT_THREADS=<n> to give PyTorch more threads in a process that does
-not use XGBoost (train_ft.py does this). Every entry point imports this module
-first, via `import mofchat`.
+MOFCHAT_THREADS=<n> gives PyTorch more threads; use it only where it has been
+tested not to crash. Every entry point imports this module first, via
+`import mofchat`.
 """
 
 import os

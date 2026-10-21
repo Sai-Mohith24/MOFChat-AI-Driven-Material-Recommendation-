@@ -1,0 +1,65 @@
+# Streamlit settings for app.py. The look is "crystal lattice": a cool porcelain
+# ground, a deep framework-navy sidebar, and HKUST-1 teal with copper accents
+# (HKUST-1, Cu-BTC, is the turquoise copper MOF). Space Grotesk for display,
+# IBM Plex for reading and code. mofchat/theme.py adds what the theme cannot
+# express (masthead, lattice motif, cards, status list).
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#0E7490"
+backgroundColor = "#F4F7F8"
+secondaryBackgroundColor = "#E8EFF1"
+textColor = "#0F2733"
+linkColor = "#0E7490"
+borderColor = "#D2DEE2"
+codeTextColor = "#173B4A"
+codeBackgroundColor = "#EAF1F3"
+dataframeHeaderBackgroundColor = "#E8EFF1"
+dataframeBorderColor = "#D2DEE2"
+
+# Chart palette, checked with the data-viz validator on #F4F7F8: every hue in
+# the lightness band, adjacent colour-blind separation >= 11 (deutan), all >= 3:1.
+chartCategoricalColors = ["#0891B2", "#D9622B", "#6250D6", "#008300", "#D55181", "#B07A00"]
+chartSequentialColors = ["#E0F4F7", "#B9E5EC", "#8ED3DF", "#5FBFD0", "#33A9BF",
+                         "#0891B2", "#0A7891", "#0C6175", "#0D4B5B", "#0B3642"]
+
+redColor = "#C0392B"
+redBackgroundColor = "#FBE7E4"
+redTextColor = "#A3271B"
+orangeColor = "#D9622B"
+orangeBackgroundColor = "#FBEBE1"
+orangeTextColor = "#A8461A"
+yellowColor = "#B07A00"
+yellowBackgroundColor = "#FBF2DC"
+yellowTextColor = "#7A5500"
+greenColor = "#1E8A5F"
+greenBackgroundColor = "#E2F3EC"
+greenTextColor = "#146B48"
+blueColor = "#0E7490"
+blueBackgroundColor = "#E1F2F6"
+blueTextColor = "#0B5C72"
+grayColor = "#6B8590"
+grayBackgroundColor = "#E8EFF1"
+grayTextColor = "#4F6873"
+
+font = "'IBM Plex Sans':https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+headingFont = "'Space Grotesk':https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap"
+codeFont = "'IBM Plex Mono':https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+headingFontWeights = 600
+metricValueFontWeight = 600
+baseRadius = "0.6rem"
+buttonRadius = "0.6rem"
+showWidgetBorder = true
+
+[theme.sidebar]
+backgroundColor = "#0B1F2A"
+secondaryBackgroundColor = "#12303D"
+textColor = "#DCE8EB"
+primaryColor = "#22B8CF"
+borderColor = "#24485A"
+linkColor = "#7FD8E6"
+codeTextColor = "#DCE8EB"
+codeBackgroundColor = "#12303D"

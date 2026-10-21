@@ -18,11 +18,10 @@ embeddings.npy, index.faiss, metrics.json, training_curve.png
 """
 
 import json
-import os
 import time
 
-os.environ.setdefault("MOFCHAT_THREADS", str(min(8, os.cpu_count() or 1)))  # no XGBoost in this process
-
+# PyTorch stays single-threaded (the mofchat default): with 8 threads the first numpy -> tensor copy
+# segfaults on macOS (torch 2.13, 2026-10). One thread trains in about 90 s.
 from mofchat._faiss import faiss  # import order matters on macOS (see mofchat/_faiss.py)
 
 import matplotlib

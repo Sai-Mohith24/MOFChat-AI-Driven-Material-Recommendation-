@@ -3,12 +3,13 @@ import json
 import pandas as pd
 import streamlit as st
 
+from mofchat import theme
 from mofchat.config import EVAL_DIR, FT_EMBED_DIR, PROPERTY_MODEL_DIR
 from mofchat.ui import eval_summary
 
-st.title("Evaluation", anchor=False)
-st.caption("All numbers on this page are produced by `python evaluate.py`, `train_ft.py` and "
-           "`train_property_models.py` and read from the artifacts folder.")
+theme.page_header("Evaluation", "Benchmarks · held-out results",
+                  "All numbers on this page are produced by `python evaluate.py`, `train_ft.py` and "
+                  "`train_property_models.py` and read from the artifacts folder.")
 
 summary = eval_summary()
 if summary is None:
@@ -119,3 +120,5 @@ if ep.exists():
                f"neighbour lists: {sim['overlap_ft_vs_raw_knn']:.0%}.")
     if (FT_EMBED_DIR / "training_curve.png").exists():
         st.image(str(FT_EMBED_DIR / "training_curve.png"), width=520)
+
+theme.colophon()
