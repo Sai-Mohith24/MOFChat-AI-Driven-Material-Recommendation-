@@ -402,8 +402,16 @@ class MOFChatAgent:
         rows_for_ids = r.table if r.table is not None else (r.result.rows if r.result is not None else None)
         own = validator.query_numbers(r.question) + ([c.value for c in r.plan.constraints] if r.plan else [])
 
+        # a prediction from the user's own descriptors involves no MOF at all, so any MOF name in the answer is
+        # invented (Llama 3 offered "MOF-2007" and "MOF-210" as matches for a predicted surface area)
+        no_mofs = r.plan.intent == "predict" and not r.plan.mof_ids and rows_for_ids is None
+
         def check(t):
-            return validator.validate_answer(t, rows_for_ids, allowed, skip_values=own)
+            v = validator.validate_answer(t, rows_for_ids, allowed, skip_values=own)
+            if no_mofs:
+                v["invalid_ids"] = list(dict.fromkeys(v["invalid_ids"] + validator.named_frameworks(v["text"])))
+                v["ok"] = v["ok"] and not v["invalid_ids"]
+            return v
 
         text, used = llm.write_answer(ctx, self.model_id)
         self.last_models.append(used)

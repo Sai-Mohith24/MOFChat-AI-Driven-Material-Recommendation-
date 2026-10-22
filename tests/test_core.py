@@ -148,6 +148,12 @@ def test_answer_validator_catches_garbled_id_and_numbers():
     assert ok["ok"]
     # GPT-OSS writes thousands with a narrow no-break space ("4\u202f394"); that is one number, not "394"
     assert validator.validate_answer("ACOCOM has a surface area of 4\u202f394 m²/g.", rows, allowed)["ok"]
+    # GPT-OSS 120B cited a prompt section header as a source: 'the best candidates for "high SA" [WHY].'
+    v = validator.validate_answer("ACOCOM is the best candidate [WHY]. See the notes [1] and [Notes].", rows, allowed)
+    assert v["text"] == "ACOCOM is the best candidate. See the notes [1] and." and v["ok"]
+    # literature names the LLM may invent in a prediction answer (Llama 3 wrote "MOF-2007" and "MOF-210")
+    assert validator.named_frameworks("MOF-2007 (4341.5) and MOF-210; also ZIF-8, UiO-66 and IRMOF-1, not MOF-") \
+        == ["MOF-2007", "MOF-210", "ZIF-8", "UiO-66", "IRMOF-1"]
 
 
 def test_answer_validator_catches_false_comparison_claims():

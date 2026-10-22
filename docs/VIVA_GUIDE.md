@@ -131,6 +131,63 @@ Four bugs, all fixed with a unit test each:
 **Q: Your literature review: are the papers real?**
 The review-1 table had problems: six of the fifteen papers do not exist, and several had wrong authors. For example, ChatMOF is by Y. Kang and J. Kim, not A. S. Rosen. We verified every entry and replaced the table ([LITERATURE_REVIEW.md](LITERATURE_REVIEW.md)). Say this openly if asked.
 
+## 3b. Questions a materials-modelling examiner is likely to ask
+
+**Q: Can MOFChat predict CO2 (or H2, CH4) uptake?**
+No, and say so directly. The CoRE-MOF table we use has geometry only (pore sizes, surface area, void fraction, density, metals); it has no adsorption isotherms. Uptake needs either GCMC simulation (grand canonical Monte Carlo with force fields such as UFF/TraPPE) or experimental data. What we do instead is rank by geometric proxies that the literature links to uptake (surface area and void fraction for storage, open metal sites and narrow pores for CO2) and label these as heuristics in the app. The next step is to attach GCMC uptake labels (e.g. from hMOF or CoRE-MOF simulation sets) and train the same surrogate pipeline on them.
+
+**Q: Where does "simulation" appear in your project?**
+- The descriptors themselves are simulation outputs: Zeo++ computes pore diameters, surface area and volumes by probing the crystal with a 3.31 Å (N2-sized) sphere.
+- Our surrogate models replace those calculations: XGBoost predicts surface area from cheap descriptors in milliseconds (R² 0.982).
+- The physics rule (PLD below the probe diameter → zero accessible area) comes straight from how the simulation works.
+
+**Q: Why is surface area exactly zero for 27 % of the MOFs? Isn't that bad data?**
+No. Those MOFs have a pore limiting diameter below the 3.31 Å probe, so the probe cannot enter; their accessible area is zero by definition. Every one of the 3,252 zero-area MOFs satisfies this, and the rule classifies the test set with 100 % accuracy.
+
+**Q: Explain LCD, PLD and why PLD matters for separation.**
+LCD (largest cavity diameter) is the largest sphere that fits anywhere in the pore network; PLD (pore limiting diameter) is the largest sphere that can pass through it, i.e. the narrowest window. Separation by size (molecular sieving) depends on PLD: to pass CO2 (kinetic diameter 3.3 Å) but block N2 (3.64 Å), PLD must lie between them. The separation preset uses exactly that rule.
+
+**Q: Why are open metal sites good for CO2 capture?**
+An open (coordinatively unsaturated) metal site is a metal atom with an empty coordination position facing the pore. CO2's quadrupole and its oxygen lone pairs interact strongly with it, raising adsorption enthalpy and CO2/N2 selectivity (HKUST-1 and Mg-MOF-74 are the classic examples). That is why the CO2 preset requires an open metal site.
+
+**Q: Your 100 % accuracy looks suspicious.**
+- The development-set 100 % is optimistic for the rule parser because it was tuned on those questions; we say so.
+- The honest number is the held-out set: 20 phrasings written after tuning, never used to tune anything. The default model gets 20/20; the offline model 16/20.
+- 20 questions is small (one question = 5 points), so we report the per-model comparison and the ablation to show the result is not luck.
+- 100 % means the system returns exactly the same MOFs as a hand-written gold plan, which is a strict criterion.
+
+**Q: What changed since review 1?**
+The review-1 retrieval (Sentence-BERT question vector searched against FT-Transformer MOF vectors) did not depend on the question, scoring 9.4 % on our benchmark. We replaced it with plan → validate → SQL/NSGA-II and kept the FT-Transformer for MOF-to-MOF similarity and prediction. We also corrected the literature table: six review-1 references could not be found anywhere and were removed; the new review lists only papers verified against publisher or arXiv records.
+
+**Q: Why trust a geometric heuristic like Chahine's rule?**
+Chahine's rule is an empirical observation that H2 uptake at 77 K scales with surface area (about 1 wt % per 500 m²/g). It is a screening rule, not a prediction; we use it only to rank candidates and state it as such.
+
+**Q: Where are accuracy, ROC-AUC and confusion matrices? Your models are regressors.**
+Correct: surface area and void fraction are regression tasks, so we report R², MAE and RMSE for them. For classification metrics we evaluated the real classification tasks in the project ([DL_RESULTS.md](DL_RESULTS.md), `evaluate_dl.py`):
+- **Open-metal-site prediction:** a deep-learning classification experiment on a real database label. FT-Transformer 0.728 accuracy / 0.755 ROC-AUC, MLP 0.734 / 0.756, XGBoost 0.750 / 0.787, against a majority baseline of 0.663 / 0.50.
+- **Planner intent classification:** 0.988 accuracy for the hybrid planner.
+- **Off-topic detection:** ROC-AUC 0.981.
+
+We did not invent a classification task with a made-up label.
+
+**Q: Why does XGBoost beat your deep models again?**
+On medium-sized tables with a handful of features, gradient-boosted trees are usually as good as or better than neural networks. Grinsztajn et al. (NeurIPS 2022) show this, and TabM (ICLR 2025) and TabPFN (Nature 2025) are recent attempts to close the gap. Our results agree:
+- in regression the FT-Transformer ties XGBoost;
+- in OMS classification it is 3 AUC points behind and overfits less (train / test accuracy 0.781 / 0.728 vs 0.868 / 0.750).
+
+**Q: What do the learning curves show?**
+Train loss keeps falling while validation loss flattens and then rises, which is the onset of overfitting. Early stopping keeps the epoch with the lowest validation loss: FT-Transformer epoch 31 for OMS, 138 for surface area. The green dashed line is the untouched test score.
+
+## 3c. Demo-day checklist
+
+1. Run the app on the laptop you will present from, the day before: `venv/bin/streamlit run app.py --server.port 8502`.
+2. Start the offline fallback first: `ollama serve` (Llama 3 must be listed by `ollama list`).
+3. Check internet and that the sidebar shows "LLM: Gemini 3.1 Flash-Lite, 10 of 14 models ready" or similar.
+4. Each answer takes about 10–50 s on free tiers (planning + retrieval + answer + validation). Ask the next question while explaining the previous one, or pre-run the five demo questions so the answers are already on screen.
+5. Use the default cloud model for the prediction question: the offline Llama 3 sometimes names invented MOFs in prediction answers (the validator now flags them, but it looks bad live).
+6. If the network fails: switch the sidebar to Llama 3 (local), or to "rules" planner with no language model; both work offline.
+7. Backup: the deck's appendix has screenshots of real answers.
+
 ## 4. Demo script (5 minutes)
 
 0. Sidebar: open "All language models" to show the 14 models and which are ready; the default model is selected.

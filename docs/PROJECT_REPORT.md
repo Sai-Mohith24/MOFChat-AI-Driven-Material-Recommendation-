@@ -277,6 +277,45 @@ During development the validator's own false positives were found and fixed: per
 ### 5.6 Knowledge retrieval
 On 12 in-domain questions with a known source, hit@1 is 75 % and hit@3 is 83 %. All 5 off-topic questions are rejected.
 
+### 5.7 Classification, learning curves and feature extraction (`evaluate_dl.py`)
+Full tables and figures are in [DL_RESULTS.md](DL_RESULTS.md); the production models are not changed by this script.
+
+**Open-metal-site (OMS) classification.** This is a new deep-learning classification experiment on a real database label: 66.4 % of MOFs have an open metal site.
+- **Inputs:** the ten geometric descriptors plus the primary metal. OMS_Type is excluded because it would give the answer away.
+- **Split:** stratified 8,414 / 1,803 / 1,803 (train / validation / test).
+
+| Model | Accuracy | F1 | ROC-AUC | PR-AUC | Train / val / test accuracy |
+|---|---:|---:|---:|---:|---|
+| Majority baseline | 0.663 | 0.798 | 0.500 | 0.663 | - |
+| Logistic regression | 0.693 | 0.798 | 0.676 | 0.804 | 0.705 / 0.699 / 0.693 |
+| XGBoost | 0.750 | 0.827 | 0.787 | 0.871 | 0.868 / 0.770 / 0.750 |
+| MLP (deep learning) | 0.734 | 0.814 | 0.756 | 0.847 | 0.782 / 0.755 / 0.734 |
+| FT-Transformer (deep learning, 104k parameters) | 0.728 | 0.810 | 0.755 | 0.852 | 0.781 / 0.735 / 0.728 |
+
+- All learned classifiers beat the baseline. XGBoost is best, and the two deep models are close behind, the same pattern as the regression results.
+- Accuracy levels off near 75 %. Our interpretation: whether a metal site is open depends on coordination chemistry that pore geometry and metal type only partly capture.
+- The report also includes confusion matrices, ROC and precision-recall curves, and per-epoch train/validation loss and accuracy curves.
+
+**Intent classification by the planner** (84 benchmark questions, from the saved plans):
+- the hybrid planner reaches 0.988 intent accuracy with both Gemini 3.1 Flash-Lite and Llama 3;
+- Llama 3 alone reaches 0.893;
+- the rule parser alone reaches 0.964.
+
+**Off-topic detection.** The top cosine score of the knowledge retriever separates 91 MOF questions from 20 off-topic ones with ROC-AUC 0.981 (accuracy 0.955 at the fixed 0.30 threshold).
+
+**Regression, train / validation / test R²** (XGBoost, MOFs with accessible pores):
+- surface area: 0.987 / 0.959 / 0.972;
+- void fraction: 0.899 / 0.820 / 0.828.
+
+The FT-Transformer learning curves (loss and R² per epoch) and the XGBoost RMSE per boosting round show where early stopping picks each model.
+
+**Feature extraction:**
+- descriptor distributions and correlations (strongest: LCD–LFPD +0.99);
+- PCA (two components explain 78 % of the variance);
+- t-SNE of the 64-d FT-Transformer embeddings;
+- masked-reconstruction R² per descriptor;
+- SHAP importance.
+
 ## 6. Discussion
 
 - **Why the review-1 retrieval failed.** It searched an FT-autoencoder index with a Sentence-BERT question vector. The vectors had the same dimension but no shared training, so retrieval ignored the question (the "chocolate cake" test). The general lesson: a two-tower model needs paired training data, and constraint satisfaction over numbers is a database problem, not a similarity problem.

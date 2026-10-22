@@ -408,6 +408,10 @@ STOP_TOKENS = {"MOF", "MOFS", "SQL", "NSGA", "SHAP", "CSD", "CORE", "RAG", "LLM"
                # section headers of the answer-writer prompt
                "QUESTION", "PLAN", "METHOD", "NOTES", "VERIFIED", "RESULTS", "RESULT", "KNOWLEDGE", "PREDICTION",
                "WHY", "IMPORTANT"}
+# GPT-OSS cites the prompt's section headers as if they were sources ("... low density" [WHY]); only the
+# KNOWLEDGE snippets are numbered sources ([1], [2]), so a bracketed header is dropped from the answer
+_SECTION_CITE = re.compile(r"[ \t]?\[(?:QUESTION|PLAN|METHOD|NOTES|VERIFIED RESULTS?|RESULTS?|KNOWLEDGE|"
+                           r"PREDICTION|WHY|IMPORTANT)\]", re.I)
 
 
 def _is_word(tok: str) -> bool:
@@ -433,6 +437,15 @@ def _levenshtein(a: str, b: str) -> int:
             cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
         prev = cur
     return prev[-1]
+
+
+_NAMED_FRAMEWORK = re.compile(r"\b(?:IR)?MOF-\d+[A-Za-z]?\b|\b(?:ZIF|UiO|MIL|HKUST|PCN|NU|CAU|DUT|MAF|SNU|UMCM|"
+                              r"ZJU|CPO|SIFSIX|MFM|JUC)-\d+[A-Za-z]?\b", re.I)
+
+
+def named_frameworks(text: str) -> list[str]:
+    """Literature names such as MOF-210, ZIF-8 or UiO-66 (not CSD refcodes)."""
+    return list(dict.fromkeys(m.group(0) for m in _NAMED_FRAMEWORK.finditer(text)))
 
 
 def _id_candidates(text: str) -> list[str]:
@@ -593,6 +606,7 @@ def validate_answer(text: str, results: pd.DataFrame | None, allowed: list[float
                     skip_values: list[float] = ()) -> dict:
     """`skip_values`: the user's own thresholds; restating them is not a claim about the results
     (closest-match answers to impossible requests do exactly that)."""
+    text = _SECTION_CITE.sub("", text)
     result_ids = list(results["MOF_ID"]) if results is not None and "MOF_ID" in results else []
     rid_upper = {r.upper(): r for r in result_ids}
     idx = db.id_index()
