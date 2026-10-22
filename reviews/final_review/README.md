@@ -7,14 +7,13 @@
 
 ## PowerPoint deck (updated 2026-10-22)
 
-- **`MOFChat_Final_Review.pptx`**: 35 slides (32 to present + 3 backup) with speaker notes, built in the style of the review-1 template (A4 landscape, Amrita logo, blue heading bars, Arial). `MOFChat_Final_Review.pdf` is the same deck exported from PowerPoint.
+- **`MOFChat_Final_Review.pptx`**: 36 slides (34 + 2 appendix), built in the style of the review-1 template (A4 landscape, Amrita logo, blue heading bars, Arial). All body text, tables, diagrams and charts use one size (12 pt); titles are 24 pt. `MOFChat_Final_Review.pdf` is the same deck exported from PowerPoint.
 - **Contents:**
   - 18 verified 2024–2026 papers and the research gap;
   - feature-extraction graphs;
-  - dashboard-to-backend pipeline, offline/online pipeline, models used, FT-Transformer architecture;
+  - dashboard-to-backend pipeline, offline/online pipeline, two slides explaining how each model works, FT-Transformer architecture;
   - benchmark results and open-metal-site classification (accuracy, ROC-AUC, confusion matrices, train/val/test curves);
   - regression results with learning curves, intent and off-topic classification, explainability;
   - app screenshots, conclusion and references.
-- **Shorter talk:** the backup slide "How to Shorten the Talk" lists which slides to hide for a 15-minute version.
 - **`pptx_source/`**: the generator (`build.js`, pptxgenjs) and its images. Numbers are read at build time from `artifacts/` (written by `evaluate.py` and `evaluate_dl.py`).
 - **Rebuild:** `npm install pptxgenjs sharp`, then run `PPTX_SKILL=<pptx skill dir> node build.js` from `pptx_source/`.
