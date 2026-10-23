@@ -7,7 +7,7 @@
 
 ## PowerPoint deck (updated 2026-10-22)
 
-- **`MOFChat_Final_Review.pptx`**: 36 slides (34 + 2 appendix), built in the style of the review-1 template (A4 landscape, Amrita logo, blue heading bars, Arial). All body text, tables, diagrams and charts use one size (12 pt); titles are 24 pt. `MOFChat_Final_Review.pdf` is the same deck exported from PowerPoint.
+- **`MOFChat_Final_Review.pptx`**: 36 slides (34 + 2 appendix; every term defined on the slide where it appears), built in the style of the review-1 template (A4 landscape, Amrita logo, blue heading bars, Arial). All body text, tables, diagrams and charts use one size (12 pt); titles are 24 pt. `MOFChat_Final_Review.pdf` is the same deck exported from PowerPoint.
 - **Contents:**
   - 18 verified 2024–2026 papers and the research gap;
   - feature-extraction graphs;

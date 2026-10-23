@@ -35,7 +35,7 @@ pres.defineLayout({ name: "A4L", width: 11.69, height: 8.27 });
 pres.layout = "A4L";
 pres.theme = { headFontFace: "Arial", bodyFontFace: "Arial" };
 pres.title = "MOFChat - Final Review";
-pres.author = "Team 09, 22AIE452";
+pres.author = "Team 14, 22AIE452";
 const C = pres.SchemeColor;
 
 pres.defineSlideMaster({
@@ -109,6 +109,9 @@ function table(s, header, rows, o) {
 const CHART = { titleFontSize: FS, titleFontFace: "Arial", legendFontSize: FS, legendFontFace: "Arial", catAxisLabelFontSize: FS,
   catAxisLabelFontFace: "Arial", valAxisLabelFontSize: FS, valAxisLabelFontFace: "Arial", dataLabelFontSize: FS, dataLabelFontFace: "Arial",
   catAxisTitleFontSize: FS, valAxisTitleFontSize: FS, catAxisTitleFontFace: "Arial", valAxisTitleFontFace: "Arial" };
+function terms(s, t, x, y, w, h) {
+  T(s, [B("Terms: ", { color: H.navy }), R(t, { color: "404040" })], { x, y, w, h });
+}
 const pct = (v, d = 1) => (100 * v).toFixed(d) + " %";
 const f3 = (v) => Number(v).toFixed(3);
 
@@ -121,7 +124,7 @@ async function build() {
   T(s, "MOFChat: Explainable, Data-Grounded MOF Recommendation with Validated LLM Planning, Multi-Objective Optimisation and Deep-Learning Surrogates",
     { x: 1.5, y: 2.65, w: 8.7, h: 1.55, fontSize: 21, fontFace: "Arial Black", align: "center", valign: "middle" });
   T(s, "22AIE452 - Data Driven Material Modeling and Simulation  |  Final Review", { x: 1.3, y: 4.4, w: 9.1, h: 0.3, color: "808080", align: "center" });
-  T(s, "Team_09", { x: 1.3, y: 4.95, w: 9.1, h: 0.3, bold: true, align: "center" });
+  T(s, "Team_14", { x: 1.3, y: 4.95, w: 9.1, h: 0.3, bold: true, align: "center" });
   const team = ["Amrutha T - 24255", "Charan Tej Reddy Y - 24259", "Poojitha D - 24263", "Enku Sai Mohith - 24316", "Ramu Jahna Bindu - 24249"];
   T(s, team.map((t, i) => R(t, { breakLine: i < team.length - 1 })), { x: 3.85, y: 5.35, w: 4.0, h: 1.6, align: "center", paraSpaceAfter: 4 });
 
@@ -155,6 +158,7 @@ async function build() {
   caption(s, "MOF framework: metal nodes joined by organic linkers", 7.6, 4.5, 3.8);
   table(s, ["Dataset at a glance", "Value"], [["MOFs in CoRE MOF 2019", "12,020"], ["Different metals", "65"], ["MOFs with zero accessible surface area", "27 %"]],
     { x: 7.6, y: 5.05, w: 3.8, colW: [2.8, 1.0], rowH: 0.36 });
+  terms(s, "MOF = metal-organic framework. LLM = large language model (AI that reads and writes text, e.g. GPT-4, Gemini). CoRE MOF = Computation-Ready, Experimental MOF database. Domain knowledge = chemistry facts such as which pore sizes let which gases through.", 0.4, 6.2, 7.0, 1.3);
 
   // ===================================================== Base paper
   s = slide("Base Paper: ChatMOF (Kang and Kim, 2024)", "Introduction");
@@ -169,6 +173,7 @@ async function build() {
     "Restricted search space (about 100 parent structures)", "Narrow topology coverage (9 topologies)", "One pretrained model needed per property",
     "General, non-fine-tuned LLM (GPT-4)", "High compute cost (GA and simulations)", "Results are not validated against the data"];
   lims.forEach((t, i) => T(s, [B(`L${i + 1}  `, { color: H.red }), R(t)], { x: 6.1, y: 1.45 + i * 0.55, w: 5.3, h: 0.5 }));
+  terms(s, "ReAct = an agent loop where the LLM reasons, calls a tool, reads the result and repeats. pandas = Python library for tables. MOFTransformer = pretrained Transformer that predicts MOF properties from the 3-D structure. GA = genetic algorithm (evolves candidates by mutation and selection). PORMAKE = tool that builds MOF structures from building blocks. Topology = the connection pattern of metal nodes and linkers. Token limit = maximum amount of text an LLM can read at once.", 0.4, 6.45, 10.9, 1.3);
 
   // ===================================================== Objectives & novelty
   pres.addSection({ title: "Objectives" });
@@ -183,7 +188,8 @@ async function build() {
     ["Only 9 topologies", "Every CoRE-MOF structure, 65 metals"], ["One model per property", "Our own XGBoost and FT-Transformer surrogates"],
     ["Proprietary GPT-4", "14 free or local LLMs with automatic fallback"], ["High computation", "Millisecond surrogate models instead of simulations"],
     ["No validation", "Answer validator, conformal intervals, SHAP and a benchmark"]],
-  { x: 4.85, y: 1.1, w: 6.55, colW: [2.3, 4.25], rowH: 0.55 });
+  { x: 4.85, y: 1.1, w: 6.55, colW: [2.3, 4.25], rowH: 0.5 });
+  terms(s, "NSGA-II = Non-dominated Sorting Genetic Algorithm II (ranks options with several goals). SHAP = SHapley Additive exPlanations (how much each input pushed a prediction). RAG = retrieval-augmented generation (look up documents, then answer). SQL = database query language. JSON plan = structured text that says what to search. Surrogate = fast ML model that replaces a slow calculation. Held-out set = test questions never used while building.", 0.4, 6.45, 10.9, 1.3);
 
   // ===================================================== Literature (4 slides)
   pres.addSection({ title: "Literature" });
@@ -213,6 +219,11 @@ async function build() {
     const rows = LIT.slice(a, b).map((r, i) => [String(a + i + 1), bold(r[0]), r[1], r[2], r[3], r[4], r[5], { text: r[6], options: { color: H.navy } }]);
     table(s, ["#", "Paper", "Authors", "Year, venue", "Method", "Contribution", "Limitation", "Use in MOFChat"], rows,
       { x: 0.25, y: 1.0, w: 11.19, colW: [0.35, 1.95, 1.15, 1.25, 1.7, 1.6, 1.45, 1.74] });
+    terms(s, [
+      "QA = question answering. WikiTQ / TabFact = public table question-answering benchmarks. Confabulation = a confident but made-up LLM answer. Equivariant diffusion = generative model that respects rotations of a structure. CO2 capture = trapping carbon dioxide from gas mixtures.",
+      "JACS = Journal of the American Chemical Society. CSD = Cambridge Structural Database of crystal structures. Knowledge graph = facts stored as linked entities. GBDT = gradient-boosted decision trees (e.g. XGBoost). BatchEnsemble = cheap way to train many networks that share weights. Materials Project = public database of inorganic materials.",
+      "Multimodal = uses more than one kind of input (crystal structure and text). VAE = variational autoencoder (generative model). SFT = supervised fine-tuning. RL = reinforcement learning. Preprint = paper not yet peer-reviewed (arXiv). Closed-loop discovery = AI proposes, lab tests, results feed back."][p],
+      0.25, 6.95, 10.4, 0.85);
   });
 
   // ===================================================== Research gap
@@ -223,6 +234,7 @@ async function build() {
     [bold("Few benchmarks for query planning"), "Accuracy is reported on the authors' own question sets.", "64-question development set, 20 held-out questions, model comparison and ablation."],
     [bold("Tabular DL vs trees on MOF descriptors"), "TabPFN, TabM and Grinsztajn et al. compare on generic data.", "FT-Transformer, MLP, XGBoost and GP compared on MOF regression and classification."]],
   { x: 0.4, y: 1.2, w: 10.9, colW: [2.7, 3.9, 4.3], rowH: 1.0 });
+  terms(s, "Deterministic = always gives the same output for the same input (normal code, not an LLM). Proprietary = paid, closed model. Ablation = removing one part to measure what it adds. Tabular DL = deep learning on tables. MLP = multilayer perceptron (simple neural network). GP = Gaussian process.", 0.4, 6.75, 10.9, 0.9);
 
   // ===================================================== Dataset
   pres.addSection({ title: "Dataset" });
@@ -230,13 +242,14 @@ async function build() {
   table(s, ["Category", "Attributes"], [["Identification", "MOF_ID (CSD refcode)"], ["Pore geometry", "LCD, PLD, LFPD (Å)"], ["Density", "Density (g/cm³)"],
     ["Surface area", "Accessible (m²/g, m²/cm³), non-accessible"], ["Porosity", "Void fraction, pore volume, non-accessible volume"], ["Chemistry", "Metal type, open metal site, OMS type"]],
   { x: 0.4, y: 1.1, w: 5.4, colW: [1.5, 3.9], rowH: 0.36 });
-  T(s, "12,020 experimental MOFs and 17 columns, computed with Zeo++ using a 3.31 Å (N2) probe.", { x: 0.4, y: 4.0, w: 5.4, h: 0.5 });
+  T(s, "12,020 experimental MOFs and 17 columns, computed with Zeo++ using a 3.31 Å (N2) probe.", { x: 0.4, y: 3.85, w: 5.4, h: 0.5 });
   sub(s, "Preprocessing (ETL) findings", 6.0, 1.05, 5.4);
   table(s, ["Check", "Finding and action"], [["Missing values, duplicates", "None"], ["Two column pairs identical", "Duplicates dropped"],
     ["Pore volume = void fraction / density", "Derived column; documented"], ["Zero surface area (3,252 MOFs)", "All have PLD < 3.31 Å; physics rule"],
     ["Density header said cm³/g", "Values are g/cm³; label fixed"], ["2,087 multi-metal MOFs", "Separate mof_metals table"],
     ["Feature scaling", "log1p and z-score"]], { x: 6.0, y: 1.4, w: 5.4, colW: [2.6, 2.8], rowH: 0.36 });
-  await img(s, fig("feat_metals.png"), 0.4, 5.25, 10.9, 2.55);
+  await img(s, fig("feat_metals.png"), 0.4, 4.6, 10.9, 2.05);
+  terms(s, "LCD = largest cavity diameter (biggest sphere that fits in a cage). PLD = pore limiting diameter (narrowest window a molecule must pass). LFPD = largest free pore diameter (biggest sphere that can travel through). OMS = open metal site. CSD refcode = MOF ID in the Cambridge Structural Database. Zeo++ = software that computes pore geometry. ETL = extract, transform, load. log1p = log(1 + x). z-score = (value - mean) / standard deviation.", 0.4, 6.75, 10.9, 1.1);
 
   // ===================================================== Feature extraction 1
   s = slide("Feature Extraction: Descriptor Distributions and Correlations", "Dataset");
@@ -248,6 +261,12 @@ async function build() {
   bullets(s, ["Most descriptors are right-skewed, so they are log-transformed and standardised before the FT-Transformer",
     "27 % of MOFs have exactly zero accessible surface area (the spike at 0)", "Strongest correlations: " + sc.join(", "),
     "Pore volume is derived from void fraction and density, so it is left out when predicting void fraction"], { x: 0.4, y: 4.35, w: 6.9, h: 2.8 });
+  sub(s, "Terms", 7.45, 4.8, 3.9, H.navy);
+  bullets(s, [[B("LCD: "), R("largest cavity diameter")], [B("PLD: "), R("pore limiting diameter (narrowest window)")],
+    [B("LFPD: "), R("largest free pore diameter along a path")], [B("ASA / ASA_vol: "), R("accessible surface area per gram / per cm³")],
+    [B("Void fraction: "), R("share of the volume that is empty")], [B("Pore volume: "), R("empty volume per gram")],
+    [B("NASA / NAV: "), R("non-accessible area / volume")], [B("Pearson r: "), R("-1 to +1, how linearly two values move together")]],
+    { x: 7.45, y: 5.12, w: 3.95, h: 2.7, paraSpaceAfter: 2 });
 
   // ===================================================== Feature extraction 2
   s = slide("Feature Extraction: PCA, Learned Embeddings and Reconstruction", "Dataset");
@@ -258,7 +277,8 @@ async function build() {
   bullets(s, [[B("PCA: "), R(`the first two components explain ${pct(pe[0] + pe[1], 0)} of the variance`)],
     [B("t-SNE of the 64-d FT-Transformer embeddings: "), R("smooth surface-area gradient; metals form local clusters")],
     [B("Masked reconstruction: "), R(`R² ${f3(FTM.reconstruction_r2_masked.Surface_Area)} for surface area and ${f3(FTM.reconstruction_r2_masked.Void_Fraction)} for void fraction when hidden`)],
-    [B("SHAP: "), R("pore volume and void fraction drive surface area; density drives void fraction")]], { x: 7.45, y: 3.45, w: 3.95, h: 4.2 });
+    [B("SHAP: "), R("pore volume and void fraction drive surface area; density drives void fraction")]], { x: 7.45, y: 3.45, w: 3.95, h: 2.9 });
+  terms(s, "PCA = principal component analysis (finds the main directions of variation). t-SNE = method that draws high-dimensional data as a 2-D map. Embedding = a vector of numbers that represents a MOF. Masked reconstruction = hide some inputs and let the model rebuild them. R² = share of variance explained (1 = perfect).", 0.3, 6.45, 11.1, 1.2);
 
   // ===================================================== Pipeline dashboard -> backend
   pres.addSection({ title: "Architecture" });
@@ -286,26 +306,30 @@ async function build() {
   arrow(s, 7.6, 5.67, 8.0, 5.67);
   box(s, 8.0, 5.3, 3.4, 0.75, "Answer validator", H.pale.aqua);
   line(s, 9.7, 6.05, 9.7, 6.75); arrow(s, 9.7, 6.75, 2.5, 6.75);
-  T(s, "Stored artifacts: coremof.db, embeddings.npy and index.faiss, xgb.json and ft.pt, knowledge index", { x: 2.95, y: 6.95, w: 8.4, h: 0.3, color: H.grey });
-  T(s, "Red boxes use a language model; the other steps are deterministic code.", { x: 2.95, y: 7.35, w: 8.4, h: 0.3, italic: true, color: H.grey });
+  T(s, "Red boxes use a language model; the other steps are deterministic code.", { x: 2.95, y: 6.9, w: 8.4, h: 0.3, italic: true, color: H.grey });
+  terms(s, "Intent router = picks the tool for the request type. FAISS = fast vector search library. MiniLM = small sentence-embedding model. Conformal = 90 % prediction interval. Fallback = next model used when one fails.", 2.95, 7.2, 8.4, 0.65);
 
   // ===================================================== Offline + online pipeline
   s = slide("Pipeline Architecture: Offline Training and Online Inference", "Architecture");
   sub(s, "Offline (run once)", 0.4, 1.0, 5);
   const off = [["MOF dataset", "8064A2", "FFFFFF"], ["ETL and checks", H.pale.green], ["Feature scaling", H.pale.aqua], ["Masked FT-Transformer", H.pale.peach],
     ["Surrogate models", H.pale.blue], ["Knowledge index", H.pale.pink], ["Evaluation", H.pale.yellow]];
-  off.forEach(([t, f, c], i) => { const x = 0.35 + i * 1.6; box(s, x, 1.4, 1.45, 0.9, t, f, { color: c || "000000" }); if (i < off.length - 1) arrow(s, x + 1.45, 1.85, x + 1.6, 1.85); });
-  T(s, "Scripts: setup_db.py, train_ft.py, train_property_models.py, setup_vectorstore.py, evaluate.py, evaluate_dl.py", { x: 0.4, y: 2.45, w: 10.9, h: 0.3, color: H.grey });
-  sub(s, "Online (per question)", 0.4, 3.0, 5);
+  off.forEach(([t, f, c], i) => { const x = 0.35 + i * 1.6; box(s, x, 1.35, 1.45, 0.85, t, f, { color: c || "000000" }); if (i < off.length - 1) arrow(s, x + 1.45, 1.77, x + 1.6, 1.77); });
+  T(s, "• Dataset: 12k CoRE-MOFs  • ETL: Clean & SQLite  • FT-Transformer: 64-d SSL  • Surrogates: XGBoost  • Index: S-BERT + FAISS RAG", { x: 0.4, y: 2.25, w: 10.9, h: 0.25, color: H.navy, bold: true });
+  T(s, "Scripts: setup_db.py, train_ft.py, train_property_models.py, setup_vectorstore.py, evaluate.py, evaluate_dl.py", { x: 0.4, y: 2.50, w: 10.9, h: 0.25, color: H.grey });
+
+  sub(s, "Online (per question)", 0.4, 2.85, 5);
   const on = [["User query", "FAC090"], ["Plan (LLM and rules)", "E6B9B8"], ["Validate plan", H.pale.aqua], ["Execute tools", H.pale.green],
     ["Write answer (LLM)", "E6B9B8"], ["Validate answer", H.pale.aqua], ["Show answer", "FAC090"]];
-  on.forEach(([t, f], i) => { const x = 0.35 + i * 1.6; box(s, x, 3.4, 1.45, 0.9, t, f); if (i < on.length - 1) arrow(s, x + 1.45, 3.85, x + 1.6, 3.85); });
-  sub(s, "Feature extraction inside the FT-Transformer", 0.4, 4.75, 8);
+  on.forEach(([t, f], i) => { const x = 0.35 + i * 1.6; box(s, x, 3.20, 1.45, 0.85, t, f); if (i < on.length - 1) arrow(s, x + 1.45, 3.62, x + 1.6, 3.62); });
+
+  sub(s, "Feature extraction inside the FT-Transformer", 0.4, 4.45, 8);
   const fe = [["10 descriptors, metal, OMS", H.pale.grey], ["Feature tokenizer", H.pale.aqua], ["[CLS] and 3 Transformer blocks", H.pale.blue],
     ["64-d MOF embedding", H.pale.peach], ["FAISS nearest neighbours", H.pale.green], ["Similar MOFs", "FAC090"]];
-  fe.forEach(([t, f], i) => { const x = 0.35 + i * 1.87; box(s, x, 5.15, 1.7, 0.95, t, f); if (i < fe.length - 1) arrow(s, x + 1.7, 5.62, x + 1.87, 5.62); });
+  fe.forEach(([t, f], i) => { const x = 0.35 + i * 1.87; box(s, x, 4.80, 1.7, 0.85, t, f); if (i < fe.length - 1) arrow(s, x + 1.7, 5.22, x + 1.87, 5.22); });
   T(s, "In review 1, 384-d MOF embeddings were matched to a Sentence-BERT question vector. The two were never trained together, so this path was replaced by plan, validate and SQL (exact answers rose from 9.4 % to 100 %).",
-    { x: 0.4, y: 6.5, w: 10.9, h: 0.7 });
+    { x: 0.4, y: 6.05, w: 10.9, h: 0.65 });
+  terms(s, "SSL = self-supervised learning (learns from the data itself, no labels). S-BERT = Sentence-BERT. Regex = text-pattern rules. Levenshtein = number of letter edits between two words. [CLS] = extra summary token. L2-normalised = scaled to length 1. Cosine = similarity of two vectors (1 = same direction).", 0.4, 6.85, 10.9, 0.9);
 
   // ===================================================== Models used (1/2)
   s = slide("Models Used (1): Language and Embedding Models", "Architecture");
@@ -317,7 +341,8 @@ async function build() {
     [bold("all-MiniLM-L6-v2 (Sentence-BERT)"), "Embedding model, 384-d", "6-layer Transformer; mean-pooled sentence vectors compared by cosine similarity", "Embeds questions and knowledge chunks for RAG"],
     [bold("FT-Transformer autoencoder"), "Embedding model, 64-d", "Each descriptor becomes a token; 30 % are masked and the [CLS] state reconstructs all ten", "MOF embeddings for similarity search"],
     [bold("FAISS"), "Vector index", "Inner product on normalised vectors equals cosine similarity; fast exact search", "Nearest-neighbour search for RAG and similarity"]],
-  { x: 0.3, y: 1.05, w: 11.1, colW: [2.6, 1.7, 4.4, 2.4], rowH: 0.8 });
+  { x: 0.3, y: 1.05, w: 11.1, colW: [2.6, 1.7, 4.4, 2.4], rowH: 0.7 });
+  terms(s, "Token = a piece of a word or one input feature. Temperature 0 = always choose the most likely output (repeatable). JSON mode = output forced to structured JSON. Open-weight = model weights are public. 384-d / 64-d = a vector of 384 / 64 numbers. Mean-pooled = average of the word vectors.", 0.3, 6.95, 11.1, 0.85);
 
   // ===================================================== Models used (2/2)
   s = slide("Models Used (2): Prediction Models and Algorithms", "Architecture");
@@ -330,7 +355,8 @@ async function build() {
     [bold("NSGA-II"), "Multi-objective algorithm", "Sorts candidates into Pareto fronts, then prefers well-spread points (crowding distance)", "Ranks MOFs on several objectives"],
     [bold("SHAP (TreeSHAP)"), "Explainability", "Shapley values split each prediction into per-feature contributions", "Explains every prediction"],
     [bold("Split-conformal prediction"), "Uncertainty", "90th percentile of absolute errors on a calibration split gives a ± interval", "90 % prediction intervals"]],
-  { x: 0.3, y: 1.05, w: 11.1, colW: [2.6, 1.7, 4.4, 2.4], rowH: 0.72 });
+  { x: 0.3, y: 1.05, w: 11.1, colW: [2.6, 1.7, 4.4, 2.4], rowH: 0.62 });
+  terms(s, "MSE = mean squared error. Cross-entropy (BCE) = loss for yes/no classification. ReLU = max(0, x). RBF kernel = similarity that decays with distance. L2 penalty = keeps weights small. Pareto front = set of best trade-offs. Calibration split = data kept aside only to size the interval.", 0.3, 6.95, 11.1, 0.85);
 
   // ===================================================== FT architecture
   s = slide("Model Architecture: FT-Transformer (Gorishniy et al., 2021)", "Architecture");
@@ -352,7 +378,7 @@ async function build() {
     ["Blocks / heads / d", "3 / 4 / 64"], ["Optimiser", "AdamW, lr 0.001"], ["Batch size", "256"], ["Early stopping", "validation loss"], ["SSL masking", "30 % of tokens"],
     ["SSL training", `${FTM.epochs_trained} epochs`], ["Regressor (surface area)", `${PM.Surface_Area.ft_epochs} epochs`], ["Classifier (OMS)", `best epoch ${DL.oms.history["FT-Transformer"].best_epoch}`]],
   { x: 7.7, y: 1.4, w: 3.7, colW: [2.1, 1.6], rowH: 0.36 });
-  T(s, "Heads: embedding for similarity search, regression for surface area and void fraction, classification for open metal sites.", { x: 7.7, y: 5.75, w: 3.7, h: 0.9, color: H.navy });
+  terms(s, "d = numbers per token. Heads = parallel attention units. Self-attention = each token weighs every other token. LayerNorm = rescales each token. Residual add = adds the input back. FFN = feed-forward layer. AdamW = optimiser. lr = learning rate. Epoch = one pass over the training data.", 7.7, 5.65, 3.7, 2.15);
 
   // ===================================================== Planner + validator
   s = slide("LLM Planning: Plan, Validate, Execute", "Architecture");
@@ -369,6 +395,7 @@ async function build() {
     "Thresholds not in the question become preferences", "MOF IDs not in the question dropped", "Superlatives written as constraints repaired",
     "Application presets expanded (H2, CH4, CO2, sieving, catalysis)", "Objectives not asked for in an application question dropped"], { x: 6.4, y: 1.4, w: 5.0, h: 3.6 });
   T(s, "If errors remain after two corrections, the rule-parser plan is used. If no LLM is reachable, the rules and a template answer are used.", { x: 6.4, y: 5.2, w: 5.0, h: 0.8 });
+  terms(s, "Intent = type of request. Whitelisted columns = only known column names allowed. Bound parameters = numbers passed separately, so the query cannot be changed. Read-only = cannot modify data. Superlative = 'highest', 'lowest'. Preset = ready-made rules for an application. Rule parser = regex-based question reader.", 0.4, 6.5, 10.9, 1.2);
 
   // ===================================================== NSGA-II
   s = slide("Multi-Objective Ranking with NSGA-II", "Architecture");
@@ -387,7 +414,8 @@ async function build() {
     [B("Speed: "), R("all 12,020 MOFs in 0.02 s (2 objectives) and 2.6 s (3)")]], { x: 0.4, y: 1.1, w: 5.0, h: 3.4 });
   table(s, ["Application", "Heuristic rule"], [["H2 storage", "PLD ≥ 2.89 Å; max surface area and void fraction"], ["CH4 storage", "PLD ≥ 3.80 Å; max volumetric area and void fraction"],
     ["CO2 capture", "Open metal site; PLD ≥ 3.30 Å; min LCD"], ["Separation A/B", "Kinetic diameter of A ≤ PLD ≤ that of B"], ["Catalysis", "Open metal site; PLD ≥ 5 Å"]],
-  { x: 0.4, y: 4.75, w: 5.0, colW: [1.4, 3.6], rowH: 0.4 });
+  { x: 0.4, y: 4.3, w: 5.0, colW: [1.4, 3.6], rowH: 0.36 });
+  terms(s, "Pareto front = MOFs not beaten on all objectives at once. Objective = a property to maximise or minimise. O(n log n) = time grows only a little faster than the number of MOFs. Kinetic diameter = effective size of a gas molecule (H2 2.89 Å, CO2 3.3 Å, CH4 3.8 Å).", 0.4, 7.05, 10.4, 0.75);
 
   // ===================================================== Results: benchmark
   pres.addSection({ title: "Results" });
@@ -400,14 +428,15 @@ async function build() {
     valGridLine: { style: "none" }, catGridLine: { style: "none" } }, CHART);
   s.addChart(pres.charts.BAR, [{ name: "Development (64)", labels: short, values: names.map((n) => sys[n].result_accuracy) },
     { name: "Held-out (20)", labels: short, values: names.map((n) => ho[n].result_accuracy) }],
-  Object.assign({ x: 0.3, y: 1.0, w: 6.6, h: 4.6 }, barOpts("Exact answer match (%), Gemini 3.1 Flash-Lite", ["A6A6A6", H.blue])));
+  Object.assign({ x: 0.3, y: 1.0, w: 6.6, h: 3.9 }, barOpts("Exact answer match (%), Gemini 3.1 Flash-Lite", ["A6A6A6", H.blue])));
   s.addChart(pres.charts.BAR, [{ name: "Held-out", labels: ["Alone", "+ validator", "+ hybrid"], values: [65, 70, 80] },
     { name: "Development", labels: ["Alone", "+ validator", "+ hybrid"], values: [85.9, 93.8, 100] }],
-  Object.assign({ x: 7.05, y: 1.0, w: 4.35, h: 4.6 }, barOpts("Ablation with offline Llama 3 8B", [H.red, "A6A6A6"])));
+  Object.assign({ x: 7.05, y: 1.0, w: 4.35, h: 3.9 }, barOpts("Ablation with offline Llama 3 8B", [H.red, "A6A6A6"])));
   bullets(s, [`An answer counts as correct only if it returns exactly the MOFs of a hand-written gold plan. Constraint precision@k on the held-out set: review 1 ${ho[names[0]].constraint_precision_at_k} %, hybrid ${ho[names[4]].constraint_precision_at_k} %.`,
     "The rules were tuned on the development set, so the held-out questions (written later, never used for tuning) give the fair estimate.",
     "The validator and hybrid planner add 15 points for the offline model and cost less than 0.01 s; for the cloud model they change nothing.",
-    "ChatMOF reports 96.9 % on its own search questions; the question sets differ."], { x: 0.4, y: 5.85, w: 11.0, h: 1.9 });
+    "ChatMOF reports 96.9 % on its own search questions; the question sets differ."], { x: 0.4, y: 5.05, w: 11.0, h: 1.8 });
+  terms(s, "Gold plan = the correct plan written by hand. Precision@k = share of returned MOFs that really satisfy the question. Development set = 64 questions used while building. Held-out set = 20 later questions never used for tuning. Single shot = LLM alone, no corrections. Two-tower = review-1 method matching question and MOF vectors.", 0.4, 6.95, 10.9, 0.85);
 
   // ===================================================== Results: LLM comparison
   s = slide("Results: Free LLM Comparison and Answer Validation", "Results");
@@ -419,6 +448,7 @@ async function build() {
   table(s, ["Model", "Drafts with a problem", "Rewritten", "Still flagged", "s per answer"], [["Gemini 3.1 Flash-Lite", "0 of 16", "0", "0", "9.9"],
     ["Llama 3 8B (local)", "2 of 16", "1", "0", "9.3"], ["GPT-OSS 120B", "2 of 16", "2", "1", "30.2"], ["Qwen 3.8 27B", "0 of 16", "0", "0", "26.4"]],
   { x: 0.3, y: 4.35, w: 6.7, colW: [2.1, 1.5, 1.0, 1.1, 1.0], rowH: 0.38, align: "center" });
+  terms(s, "Hybrid = LLM plan plus facts the rule parser is sure of. Median call = typical time for one planning request. Provider error = the free API refused or failed the call. Quota = daily request limit. Draft = the LLM's first answer before checking.", 0.3, 6.5, 6.7, 1.25);
   sub(s, "Examples caught by the validator", 7.25, 4.0, 4.2);
   bullets(s, ["Llama 3 invented two densities and a \"90 %\"; the ID OFEUN06 was corrected to OFERUN06", "GPT-OSS 120B claimed \"Pareto front 1\" for MOFs ranked on front 2",
     "Llama 3 named MOFs that do not exist (\"MOF-210\") in a prediction answer", "GPT-OSS cited a prompt header \"[WHY]\" as a source; it is now removed"], { x: 7.25, y: 4.35, w: 4.15, h: 3.3 });
@@ -430,11 +460,11 @@ async function build() {
   table(s, ["Model", "Accuracy", "Precision", "Recall", "F1", "ROC-AUC", "PR-AUC"], order.map((n) => [bold(n),
     f3(om[n].accuracy), f3(om[n].precision), f3(om[n].recall), f3(om[n].f1), f3(om[n].roc_auc), f3(om[n].pr_auc)]),
   { x: 0.3, y: 1.05, w: 11.1, colW: [3.0, 1.35, 1.35, 1.35, 1.35, 1.35, 1.35], rowH: 0.36, align: "center" });
-  await img(s, fig("oms_roc_pr.png"), 0.3, 3.45, 8.3, 4.3);
+  await img(s, fig("oms_roc_pr.png"), 0.3, 3.45, 7.2, 4.3);
   T(s, [B("Task: ", { color: H.navy }), R(`predict whether a MOF has an open metal site from its 10 geometric descriptors and primary metal. ${pct(DL.oms.positive_rate)} of MOFs have one. OMS_Type is not used as an input.`)],
-    { x: 8.8, y: 3.5, w: 2.65, h: 2.0 });
-  T(s, [B("Split: ", { color: H.navy }), R(`${DL.oms.split.train} / ${DL.oms.split.val} / ${DL.oms.split.test} MOFs (train / validation / test, stratified)`)], { x: 8.8, y: 5.6, w: 2.65, h: 0.8 });
-  T(s, [B("Use: ", { color: H.navy }), R("the CO2-capture preset requires an open metal site.")], { x: 8.8, y: 6.5, w: 2.65, h: 0.6 });
+    { x: 7.75, y: 3.45, w: 3.7, h: 1.25 });
+  T(s, [B("Split: ", { color: H.navy }), R(`${DL.oms.split.train} / ${DL.oms.split.val} / ${DL.oms.split.test} MOFs (train / validation / test, stratified = same OMS share in each)`)], { x: 7.75, y: 4.75, w: 3.7, h: 0.65 });
+  terms(s, "Accuracy = share of correct predictions. Precision = of MOFs predicted OMS, share that are right. Recall = of real OMS MOFs, share found. F1 = balance of precision and recall. ROC-AUC = chance a real OMS MOF scores higher than a non-OMS one (0.5 = guessing). PR-AUC = area under the precision-recall curve. Majority baseline = always predict the most common class.", 7.75, 5.5, 3.7, 2.3);
 
   // ===================================================== Results: confusion matrices
   s = slide("Results: Confusion Matrices of the OMS Classifiers", "Results");
@@ -444,15 +474,16 @@ async function build() {
     cmTxt.map(([n, tn, fp, fn, tp]) => [bold(n), String(tn), String(fp), String(fn), String(tp), om[n].acc_train_val_test.map(f3).join(" / ")]),
   { x: 0.3, y: 4.25, w: 11.1, colW: [2.4, 1.6, 1.6, 1.6, 1.6, 2.3], rowH: 0.38, align: "center" });
   bullets(s, [`All trained classifiers beat the majority baseline (${pct(om["Majority baseline"].accuracy)} accuracy, ROC-AUC 0.50). XGBoost is best and the two deep-learning models are close behind.`,
-    "The gap between train and test accuracy shows overfitting; early stopping on validation loss limits it for the deep models.",
-    "Whether a metal site is open depends on coordination chemistry that pore geometry and metal type only partly describe, so accuracy levels off near 75 %."], { x: 0.4, y: 6.0, w: 11.0, h: 1.7 });
+    "Whether a metal site is open depends on coordination chemistry that pore geometry and metal type only partly describe, so accuracy levels off near 75 %."], { x: 0.4, y: 5.95, w: 11.0, h: 0.9 });
+  terms(s, "Confusion matrix = table of actual vs predicted classes. True positive = has OMS, predicted OMS. False positive = predicted OMS but has none. False negative = has OMS, predicted none. True negative = no OMS, predicted none. Overfitting = learning the training data too closely (train accuracy much higher than test).", 0.4, 6.9, 10.9, 0.9);
 
   // ===================================================== Results: classification learning curves
   s = slide("Results: Train, Validation and Test Accuracy and Loss", "Results");
-  await img(s, fig("oms_learning_curves.png"), 0.4, 1.0, 10.9, 6.35);
+  await img(s, fig("oms_learning_curves.png"), 0.4, 1.0, 10.9, 5.7);
   const hFT = DL.oms.history["FT-Transformer"];
   T(s, `Blue: train, red: validation, green dashed: test, dotted: best epoch. FT-Transformer best epoch ${hFT.best_epoch} of ${hFT.val_loss.length}; MLP ${DL.oms.history.MLP.best_epoch}; XGBoost best round ${DL.oms.history.XGBoost.best_epoch}.`,
-    { x: 0.4, y: 7.45, w: 10.9, h: 0.4, color: H.grey });
+    { x: 0.4, y: 6.8, w: 10.9, h: 0.4, color: H.grey });
+  terms(s, "Loss = how wrong the model is (lower is better). Epoch = one pass over the training data. Boosting round = one tree added in XGBoost. Early stopping = keep the epoch with the lowest validation loss. Validation set = data used to choose that epoch; test set = untouched final check.", 0.4, 7.15, 10.4, 0.7);
 
   // ===================================================== Results: regression
   s = slide("Results: Property Prediction (Regression)", "Results");
@@ -473,24 +504,26 @@ async function build() {
   { x: 0.3, y: 4.85, w: 11.1, colW: [2.0, 1.3, 2.5, 2.5, 1.5, 1.3], rowH: 0.4, align: "center" });
   T(s, `* R² on MOFs with accessible pores; the physics rule handles the zeros exactly (${pct(sa.hurdle.rule_accuracy_test)} on test). XGBoost trains in ${sa.train_seconds.XGBoost} s, the FT-Transformer in ${sa.train_seconds["FT-Transformer"]} s.`,
     { x: 0.3, y: 6.5, w: 11.1, h: 0.5, color: H.grey });
-  T(s, "In the application each prediction shows the value, the 90 % interval, the FT-Transformer value and the SHAP contributions.", { x: 0.3, y: 7.1, w: 11.1, h: 0.4, color: H.navy });
+  terms(s, "Regression = predicting a number. R² = share of variance explained (1 = perfect). MAE = mean absolute error. Parity plot = predicted vs actual (perfect on the diagonal). Interval coverage = share of true values inside the 90 % interval. GP = Gaussian process.", 0.3, 7.0, 10.6, 0.8);
 
   // ===================================================== Results: regression curves
   s = slide("Results: Regression Learning Curves", "Results");
-  await img(s, fig("regression_learning_curves.png"), 0.4, 1.0, 10.9, 6.35);
+  await img(s, fig("regression_learning_curves.png"), 0.4, 1.0, 10.9, 5.7);
   T(s, `Blue: train, red: validation, green dashed: test R². FT-Transformer best epoch ${rg.Surface_Area.ft_best_epoch} (surface area) and ${rg.Void_Fraction.ft_best_epoch} (void fraction); XGBoost best round ${rg.Surface_Area.xgb_best_round} and ${rg.Void_Fraction.xgb_best_round}.`,
-    { x: 0.4, y: 7.45, w: 10.9, h: 0.4, color: H.grey });
+    { x: 0.4, y: 6.8, w: 10.9, h: 0.4, color: H.grey });
+  terms(s, "MSE (standardised) = squared error after scaling the target. RMSE = root mean squared error, in the target's units. Log scale = each grid step is ten times the last.", 0.4, 7.3, 10.4, 0.55);
 
   // ===================================================== Results: intent + off-topic
   const it = DL.intent, ot = DL.offtopic;
   s = slide("Results: Intent Classification and Off-Topic Detection", "Results");
   await img(s, fig("intent_confusion.png"), 0.3, 1.0, 11.1, 3.65);
-  await img(s, fig("offtopic_roc.png"), 0.3, 4.75, 7.9, 2.35);
+  await img(s, fig("offtopic_roc.png"), 0.3, 4.75, 7.9, 2.3);
   const iRows = ["Rules planner (no LLM)", "Llama 3 8B (local), alone", "Llama 3 8B (local), hybrid", "Gemini 3.1 Flash-Lite, hybrid"];
   table(s, ["Planner", "Accuracy", "Macro F1"], iRows.map((n) => [n.replace(" (local)", "").replace("Gemini 3.1 ", "").replace(" (no LLM)", ""), f3(it[n].accuracy), f3(it[n].macro_f1)]),
     { x: 8.35, y: 4.75, w: 3.1, colW: [1.3, 0.9, 0.9], rowH: 0.36, align: "center" });
   T(s, `Off-topic detector: ROC-AUC ${f3(ot.roc_auc)}, accuracy ${f3(ot.accuracy)} on ${ot.n_in_domain} MOF questions and ${ot.n_off_topic} off-topic questions (cosine threshold ${ot.threshold}).`,
-    { x: 0.3, y: 7.25, w: 11.1, h: 0.5, color: H.grey });
+    { x: 0.3, y: 7.1, w: 11.1, h: 0.3, color: H.grey });
+  terms(s, "Intent = request type (search, count, ...). Macro F1 = F1 averaged equally over all intents. Off-topic = not about MOFs. Cosine threshold = minimum text similarity to count as a MOF question.", 0.3, 7.4, 10.5, 0.45);
 
   // ===================================================== Results: explainability + similarity
   s = slide("Results: Explainability and Similarity Search", "Results");
@@ -502,6 +535,7 @@ async function build() {
     ["k-NN on raw descriptors", f3(simm.raw_descriptor_knn.mean_abs_descriptor_diff_std), pct(simm.raw_descriptor_knn.same_metal_rate), pct(simm.raw_descriptor_knn.same_open_metal_site_rate)],
     ["Random MOFs", f3(simm.random.mean_abs_descriptor_diff_std), pct(simm.random.same_metal_rate), pct(simm.random.same_open_metal_site_rate)]],
   { x: 0.3, y: 4.45, w: 7.0, colW: [2.8, 1.5, 1.2, 1.5], rowH: 0.38, align: "center" });
+  terms(s, "SHAP value = how much a feature pushed one prediction up or down. Attention = how much the model looks at each input. σ = standard deviation. k-NN = k nearest neighbours on the raw numbers. hit@k = correct source among the top k results.", 0.3, 6.3, 7.0, 1.3);
   bullets(s, ["Pore volume and void fraction dominate surface-area predictions; density dominates void fraction", "Knowledge retrieval: hit@1 75 %, hit@3 83 %",
     "Every prediction in the application shows its SHAP contributions and a 90 % interval"], { x: 7.55, y: 4.5, w: 3.85, h: 2.8 });
 
@@ -513,8 +547,9 @@ async function build() {
     ["Pretrained model per property", "Own surrogate models and OMS classifier trained on the table", "Done *"], ["General, non-fine-tuned LLM", "Domain prompts, few-shot examples, presets", "Partly"],
     ["High compute cost", "Millisecond screening; XGBoost trains in 0.25 s", "Done"], ["Unvalidated output", "Answer validator, intervals, SHAP, benchmark", "Done"]].map((r) =>
     [bold(r[0]), r[1], { text: r[2], options: { bold: true, color: r[2] === "Partly" ? H.red : H.navy, align: "center" } }]),
-  { x: 0.4, y: 1.1, w: 10.9, colW: [3.4, 6.0, 1.5], rowH: 0.55 });
-  T(s, "* for recommending existing MOFs and for properties in the table; no structure generation and no gas uptake without uptake data", { x: 0.4, y: 6.6, w: 10.9, h: 0.4, color: H.grey });
+  { x: 0.4, y: 1.1, w: 10.9, colW: [3.4, 6.0, 1.5], rowH: 0.5 });
+  T(s, "* for recommending existing MOFs and for properties in the table; no structure generation and no gas uptake without uptake data", { x: 0.4, y: 6.45, w: 10.9, h: 0.4, color: H.grey });
+  terms(s, "Few-shot = worked examples placed in the prompt. Fine-tuning = retraining an LLM on our own data. Gas uptake = how much gas a MOF adsorbs.", 0.4, 6.95, 10.9, 0.6);
 
   // ===================================================== Application
   pres.addSection({ title: "Application" });
@@ -526,7 +561,8 @@ async function build() {
   const appPages = [["Chat", "Answer, verified table, Pareto plot, SHAP, sources, plan, SQL, validator report, model used"], ["Explore and optimise", "Filters and two-objective NSGA-II with a Pareto plot"],
     ["Predict and explain", "Prediction, 90 % interval, SHAP bars, FT-Transformer attention"], ["Evaluation", "Benchmark, model comparison, parity and SHAP plots"], ["About", "Method summary and data sources"]];
   table(s, ["Page", "What it shows"], appPages.map((p) => [bold(p[0]), p[1]]), { x: 0.35, y: 4.3, w: 11.0, colW: [2.3, 8.7], rowH: 0.38 });
-  T(s, "Sidebar: choice of language model (or none), planner mode (hybrid, LLM or rules), and the status of every component.", { x: 0.35, y: 6.75, w: 11.0, h: 0.5, color: H.navy });
+  T(s, "Sidebar: choice of language model (or none), planner mode (hybrid, LLM or rules), and the status of every component.", { x: 0.35, y: 6.65, w: 11.0, h: 0.3, color: H.navy });
+  terms(s, "Streamlit = Python library for web dashboards. Parity plot = predicted vs actual values. Planner mode = how the question is read: hybrid (LLM + rules), LLM only, or rules only.", 0.35, 7.05, 10.6, 0.75);
 
   // ===================================================== Conclusion
   pres.addSection({ title: "Conclusion" });
@@ -536,12 +572,13 @@ async function build() {
     "Validated LLM planning with 14 free or local models and automatic fallback", "NSGA-II multi-objective ranking with application presets",
     `Surface-area surrogate: R² ${f3(sa.models.XGBoost.test_all.R2)}; the 90 % interval covers ${pct(sa.conformal.test_coverage)} of test MOFs`,
     `Open-metal-site classification: ROC-AUC ${f3(om.XGBoost.roc_auc)} (XGBoost), ${f3(om["FT-Transformer"].roc_auc)} (FT-Transformer), ${f3(om.MLP.roc_auc)} (MLP)`,
-    "An answer validator checks every MOF ID, number and comparison in the LLM's answer"], { x: 0.4, y: 1.4, w: 5.5, h: 5.8 });
+    "An answer validator checks every MOF ID, number and comparison in the LLM's answer"], { x: 0.4, y: 1.4, w: 5.5, h: 5.0 });
   sub(s, "Limitations and future work", 6.2, 1.05, 5.2, H.red);
   table(s, ["Limitation", "Future work"], [["No gas-uptake labels", "Add GCMC uptake data and reuse the surrogate pipeline"], ["No structure generation", "Diffusion or GA generator (e.g. MOFDiff)"],
     ["Offline model at 80 %", "LoRA fine-tuning of Llama 3 on plan examples"], ["Free-text reasoning not checked", "Sentence-level checks such as semantic entropy"],
     ["Heuristic presets", "Learned rules once uptake data exists"], ["Descriptor-only embeddings", "Structure or multimodal encoders (L2M3OF)"]],
-  { x: 6.2, y: 1.4, w: 5.2, colW: [2.0, 3.2], rowH: 0.7 });
+  { x: 6.2, y: 1.4, w: 5.2, colW: [2.0, 3.2], rowH: 0.62 });
+  terms(s, "GCMC = grand canonical Monte Carlo (simulation of gas uptake). LoRA = low-rank adaptation (cheap fine-tuning of an LLM). GA = genetic algorithm. Semantic entropy = uncertainty measured over the meanings of several sampled answers. Multimodal encoder = model that reads crystal structures as well as text.", 0.4, 6.6, 10.9, 1.1);
 
   // ===================================================== References (2 slides)
   const refs = [
@@ -581,8 +618,9 @@ async function build() {
   // ===================================================== Appendix
   pres.addSection({ title: "Appendix" });
   s = slide("Appendix: Physics Rule as a Classifier", "Appendix");
-  await img(s, fig("physics_rule.png"), 0.4, 1.0, 10.9, 5.6);
-  T(s, `Rule: surface area = 0 if PLD < ${DL.physics.threshold_A.toFixed(4)} Å. Test accuracy ${pct(DL.physics.accuracy, 2)} on ${DL.physics.n_test} MOFs.`, { x: 0.4, y: 7.0, w: 10.9, h: 0.4, bold: true, color: H.navy });
+  await img(s, fig("physics_rule.png"), 0.4, 1.0, 10.9, 5.3);
+  T(s, `Rule: surface area = 0 if PLD < ${DL.physics.threshold_A.toFixed(4)} Å. Test accuracy ${pct(DL.physics.accuracy, 2)} on ${DL.physics.n_test} MOFs.`, { x: 0.4, y: 6.6, w: 10.9, h: 0.4, bold: true, color: H.navy });
+  terms(s, "Probe = the 3.31 Å sphere (size of N2) rolled through the pores to measure them. If the narrowest window (PLD) is smaller than the probe, the probe cannot enter, so the accessible surface area is zero.", 0.4, 7.05, 10.9, 0.75);
 
   s = slide("Appendix: Application Screenshots", "Appendix");
   await img(s, path.join(HERE, "app_home.png"), 0.3, 1.0, 5.5);
